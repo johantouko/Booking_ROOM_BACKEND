@@ -3,10 +3,21 @@ package com.example.BookingRoom.ServiceImpl;
 import com.example.BookingRoom.Entities.Etudiant;
 import com.example.BookingRoom.Entities.Reservation;
 import com.example.BookingRoom.Services.MessagerieService;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -15,82 +26,161 @@ public class MessagerieServiceImpl implements MessagerieService {
     private final JavaMailSender mailSender;
 
     @Override
-    public void envoyerEmailEnAttente(Etudiant etudiant) {
+    public void envoyerEmailEnAttente(Etudiant etudiant, LocalDateTime localDateTime) {
         String sujet = "📬 Votre demande de réservation a été enregistrée";
         String corps = """
-                Bonjour %s,
+        <html>
+        <body>
+        Bonjour %s,<br><br>
 
-                Nous avons bien reçu votre demande de réservation de chambre à l’Institut Universitaire Saint Jean.
+        Nous avons bien reçu votre demande de réservation de chambre à l’Institut Universitaire Saint Jean.<br><br>
 
-                👉 Votre demande est *en attente de validation*.
+        👉 Votre demande est <strong>en attente de validation</strong>.<br><br>
 
-                ⚠ Vous disposez d’un *délai de 48 heures* pour :
-                1. Effectuer le paiement du loyer et de la caution
-                2. Et *déposer le reçu de paiement* à la comptabilité
+        ⚠ Vous disposez d’un <strong>délai de 48 heures</strong> à échéance <strong>%s</strong> pour :<br>
+        1. Effectuer le paiement du loyer et de la caution<br>
+        2. Et <strong>déposer le reçu de paiement</strong> à la comptabilité<br><br>
 
-                Sans dépôt de reçu dans ce délai, votre demande sera automatiquement annulée.
+        Sans dépôt de reçu dans ce délai, votre demande sera automatiquement annulée.<br><br>
 
-                Merci pour votre réactivité,
-                L’équipe Logement
-                Institut Universitaire Saint Jean
-                """.formatted(etudiant.getNom());
-        envoyer(etudiant.getEmail(), sujet, corps);
+        Merci pour votre réactivité,<br>
+        L’équipe Logement<br>
+        Institut Universitaire Saint Jean
+        <br><br><br>
+        </body>
+        </html>
+        """.formatted(etudiant.getNom(), formaterDateLecture(localDateTime));
+
+        try {
+            Resource resource = new ClassPathResource("documents/Prospectus isj - résidence étudiante 2025-2026 VF.pdf");
+            File fichierPdf = resource.getFile();
+
+            envoyer(etudiant.getEmail(), sujet, corps, fichierPdf);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
+
     @Override
-    public void envoyerEmailEcheance(Etudiant etudiant, String dateLimite) {
+    public void envoyerEmailEcheance(Reservation reservation) {
         String sujet = "⏰ Dernier rappel : déposez votre reçu dans les 12h";
         String corps = """
-                Bonjour %s,
+                <html>
+                <body>
+                Bonjour %s, <br><br>
 
-                Votre demande de réservation est toujours *en attente de validation*, et le délai de 48 heures arrive à expiration.
+                Votre demande de réservation est toujours <strong>en attente de validation</strong>, et le délai de 48 heures arrive à expiration. <br><br>
 
-                📌 Pour finaliser votre demande :
-                - Vous devez avoir *effectué le paiement*
-                - Et *déposé le reçu de paiement à la comptabilité* avant %s
+                📌 Pour finaliser votre demande :<br>
+                - Vous devez avoir <strong>effectué le paiement</strong><br>
+                - Et <strong>déposé le reçu de paiement à la comptabilité</strong> avant <strong>%s </strong><br>
 
-                Passé ce délai, votre réservation sera automatiquement annulée.
+                Passé ce délai, votre réservation sera automatiquement annulée.<br>
 
-                Si vous avez déjà déposé le reçu, merci d’ignorer ce message.
+                Si vous avez déjà déposé le reçu, merci d’ignorer ce message.<br><br>
 
-                Cordialement,
-                Service Logement
+                Cordialement,<br>
+                Service Logement<br>
                 Institut Universitaire Saint Jean
-                """.formatted(etudiant.getNom(), dateLimite);
-        envoyer(etudiant.getEmail(), sujet, corps);
+                <br><br><br>
+                </body>
+                </html>
+                """.formatted(reservation.getEtudiant().getNom(), formaterDateLecture(reservation.getDateReservation().plusHours(48)));
+        envoyer(reservation.getEtudiant().getEmail(), sujet, corps, null );
     }
 
     @Override
     public void envoyerEmailValidation(Reservation reservation) {
         String sujet = "🎉 Votre réservation est validée !";
         String corps = """
-                Bonjour %s,
+                <html>
+                <body>
+                Bonjour %s, <br><br>
 
-                Votre paiement a été vérifié et votre reçu validé ✅
-                Nous vous confirmons que votre réservation de chambre est *définitivement acceptée*.
+                Votre paiement a été vérifié et votre reçu validé ✅<br>
+                Nous vous confirmons que votre réservation de chambre est <strong>définitivement acceptée</strong>. <br><br>
 
-                📍 Informations :
-                - École : %s
-                - Filière : %s
-                - Chambre : %s
-                - Emplacement : %s
+                📍 Informations : <br>
+                - École : <strong>%s</strong><br>
+                - Filière : <strong>%s</strong><br>
+                - Numero hambre : <strong>%s</strong><br>
+                - Emplacement : <strong>%s</strong><br>
 
-                Vous recevrez votre clé par le service logement.
+                Vous recevrez votre clé par le service logement.<br><br>
 
-                Merci de votre confiance,
-                Service Logement
-                Institut Universitaire Saint Jean du Cameroun
+                Merci de votre confiance,<br>
+                Service Logement<br>
+                Institut Universitaire Saint Jean du Cameroun<br>
+                <br>
+                </body>
+                </html>
                 """.formatted(reservation.getEtudiant().getNom(), reservation.getEtudiant().getFiliere().getEcole().getNom(),
                 reservation.getEtudiant().getFiliere().getNom(), reservation.getChambre().getNumero(), reservation.getEmplacementchambre());
-        envoyer(reservation.getEtudiant().getEmail() , sujet, corps);
+        envoyer(reservation.getEtudiant().getEmail() , sujet, corps, null);
     }
 
-    private void envoyer(String to, String sujet, String corps) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("ton.email@gmail.com"); // À remplacer par ton adresse d'envoi
-        message.setTo(to);
-        message.setSubject(sujet);
-        message.setText(corps);
-        mailSender.send(message);
+    @Override
+    public void envoyerEmailAnnulation(Reservation reservation) {
+        String sujet = "🎉 Votre réservation a été annulée !";
+        String corps = """
+                <html>
+                <body>
+                
+                Bonjour %s, <br><br>
+                
+                Nous vous informons que votre demande de réservation de chambre a été <strong><strong>annulée automatiquement</strong>, conformément à nos règles de gestion.<br>
+                
+                📌 Raison de l’annulation :<br>
+                Vous n’avez pas déposé votre <strong>reçu de paiement</strong> dans le délai imparti de 48 heures après soumission de la demande.<br>
+                
+                ⚠ Votre chambre a donc été remise en disponibilité pour d’autres étudiants.<br>
+                
+                
+                Merci de votre compréhension, <br>
+                Service Logement <br>
+                Institut Universitaire Saint Jean du Cameroun<br>
+                
+                <br>
+                </body>
+                </html>
+                """.formatted(reservation.getEtudiant().getNom());
+        envoyer(reservation.getEtudiant().getEmail() , sujet, corps, null);
     }
+
+//    private void envoyer(String to, String sujet, String corps) {
+//        SimpleMailMessage message = new SimpleMailMessage();
+//        message.setFrom("cite@universitesaintjean.org"); // À remplacer par ton adresse d'envoi
+//        message.setTo(to);
+//        message.setSubject(sujet);
+//        message.setText(corps);
+//        mailSender.send(message);
+//    }
+
+    private void envoyer(String to, String sujet, String corpsHtml, File pieceJointe) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom("ton.email@gmail.com");
+            helper.setTo(to);
+            helper.setSubject(sujet);
+            helper.setText(corpsHtml, true); // true → HTML enabled
+
+
+            if (pieceJointe != null) {
+                helper.addAttachment(pieceJointe.getName(), pieceJointe);
+            }
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            e.printStackTrace(); // ou log.error(...)
+        }
+    }
+
+    public static String formaterDateLecture(LocalDateTime dateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE 'le' d MMMM yyyy 'à' HH'H'mm 'minute'", Locale.FRENCH);
+        return dateTime.format(formatter);
+    }
+
 }

@@ -35,3 +35,11 @@ public class Etudiant {
     @JoinColumn(name = "filiere_id")
     private Filiere filiere;
 }
+//{
+//        "nom" : "johan Touko Philbert3 ",
+//        "whatsappEtudiant" : 678927328,
+//        "whatsappParent" : 678319873,
+//        "email" : "johan.touko@gmail3.com",
+//        "filiere" : {"id" : 3 }
+//
+//        }

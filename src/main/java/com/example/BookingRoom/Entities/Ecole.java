@@ -18,12 +18,15 @@ public class Ecole {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, name="nom")
     private String nom;
 
+    @Column(nullable = false, name="sigle")
     private String sigle;
 
-    private int nombreChambresDisponibles;
+    private double nombreChambresDisponibles;
 
+    @Column(nullable = false, name="nombreChambres")
     private int nombreChambres;
 
 }

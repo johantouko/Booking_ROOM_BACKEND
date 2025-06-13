@@ -118,17 +118,15 @@ public class ReservationController {
             if (reservationcreer){
                 // 7. Mettre à jour les compteurs dans la filière
                 Filiere filiere = reservation.getEtudiant().getFiliere();
-                filiere.setNombreChambresDisponibles(filiere.getNombreChambresDisponibles() - 1);
+                filiere.setNombreChambresDisponibles(filiere.getNombreChambresDisponibles() - 0.5);
 
                 // 8. Mettre à jour les compteurs dans l’école
                 Ecole ecole = filiere.getEcole();
-                ecole.setNombreChambresDisponibles(ecole.getNombreChambresDisponibles() - 1); // assure-toi que ce champ existe bien
+                ecole.setNombreChambresDisponibles(ecole.getNombreChambresDisponibles() - 0.5); // assure-toi que ce champ existe bien
 
                 filiereRepository.save(filiere);
                 ecoleRepository.save(ecole);
-                System.out.println(nouvellereservation.getDateReservation().plusHours(48));
-//                messagerieService.envoyerEmailEnAttente(etudiant);
-
+                messagerieService.envoyerEmailEnAttente(etudiant , nouvellereservation.getDateReservation().plusHours(48) );
 
                 response.put("message", "Réservation créée avec succès.");
                 response.put("success", true);
@@ -193,6 +191,78 @@ public class ReservationController {
             response.put("success", true);
             chamreservice.majcahmabre(chambre);
             messagerieService.envoyerEmailValidation(nouvellereservation);
+            return response;
+        }   else{
+            response.put("success", false);
+            response.put("message", "Enregistrement échoué . Une erreur est survenue");
+        }
+        return response;
+
+    }
+
+    @PostMapping("/annulerReservation")
+    public Map<String, Object> annulerReservation( @RequestBody Long reservationId) {
+        Map<String, Object> response = new HashMap<>();
+
+        // 1. Charger la réservation
+        Reservation reservation = reservationService.findById(reservationId);
+        if (reservation == null) {
+            response.put("message", "Réservation introuvable.");
+            response.put("success", false);
+            return response;
+        }
+
+        // 2. Vérifier si déjà confirmée
+        if (reservation.getStatut() == StatutReservation.CONFIRMEE) {
+            response.put("success", false);
+            response.put("message", "Cette réservation a déjà été confirmée.");
+            return response;
+        }
+
+        String emplacement = reservation.getEmplacementchambre();
+
+        // 3. Changer le statut de la réservation
+        reservation.setStatut(StatutReservation.REFUSEE);
+
+        // 4. Récupérer la chambre
+        Chambre chambre = reservation.getChambre();
+
+        // 5. Mettre à jour l’emplacement demandé
+        if (emplacement.equalsIgnoreCase("litbas")) {
+            chambre.setLitbas(StatutEmplacement.DISPONIBLE);
+        } else if (emplacement.equalsIgnoreCase("litmezzanine")) {
+            chambre.setLitmezzanine(StatutEmplacement.DISPONIBLE);
+        } else {
+            response.put("success", false);
+            response.put("message", "Emplacement invalide. Choisissez entre 'litbas' ou 'litmezzanine'.");
+            return response;
+        }
+
+        // 6. Si les deux emplacements sont Occupe  → chambre occupée
+        if (chambre.getLitbas() == StatutEmplacement.DISPONIBLE &&
+                chambre.getLitmezzanine() == StatutEmplacement.DISPONIBLE) {
+            chambre.setStatut(StatutChambre.LIBRE);
+        }
+
+        Reservation nouvellereservation = reservationRepository.save(reservation);
+        boolean reservationcreer = (nouvellereservation != null);
+        if (reservationcreer){
+            // 7. Mettre à jour les compteurs dans la filière
+            Filiere filiere = reservation.getEtudiant().getFiliere();
+            filiere.setNombreChambresDisponibles(filiere.getNombreChambresDisponibles() + 0.5);
+
+            // 8. Mettre à jour les compteurs dans l’école
+            Ecole ecole = filiere.getEcole();
+            ecole.setNombreChambresDisponibles(ecole.getNombreChambresDisponibles() + 0.5); // assure-toi que ce champ existe bien
+
+            filiereRepository.save(filiere);
+            ecoleRepository.save(ecole);
+
+
+            chamreservice.majcahmabre(chambre);
+            messagerieService.envoyerEmailAnnulation(nouvellereservation);
+            response.put("message", "Réservation anulée avec succès.");
+            response.put("success", true);
             return response;
         }   else{
             response.put("success", false);

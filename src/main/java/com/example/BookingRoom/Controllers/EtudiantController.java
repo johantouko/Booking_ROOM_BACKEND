@@ -73,9 +73,9 @@ public class EtudiantController {
         return students ;
     }
 
-    // 🔹 Lister les filières d'une école
-    @GetMapping("/filiereEcole")
-    public List<Etudiant> getFilieres(@RequestBody Long filiereid) {
+    // 🔹 Lister les etudiant d'une filiere
+    @GetMapping("/filiere")
+    public List<Etudiant> getEtudiantbyfiliere(@RequestParam Long filiereid) {
         return etudiantService.getEtudaintByFiliere(filiereService.findbyId(filiereid));
     }
 }

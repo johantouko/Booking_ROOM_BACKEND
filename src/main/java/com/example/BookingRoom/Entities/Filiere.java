@@ -20,7 +20,7 @@ public class Filiere {
 
     private String nom;
     private int nombreChambres;
-    private int nombreChambresDisponibles;
+    private double nombreChambresDisponibles;
 
     @ManyToOne
     @JoinColumn(name = "ecole")

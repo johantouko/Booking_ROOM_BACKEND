@@ -46,7 +46,7 @@ public class EcoleServiceImpl implements EcoleService {
 
     @Override
     public List<Ecole> getAllEcoles() {
-        return this.ecoleRepository.findAll();
+        return this.ecoleRepository.findAllByOrderByNomAsc();
     }
 
     @Override

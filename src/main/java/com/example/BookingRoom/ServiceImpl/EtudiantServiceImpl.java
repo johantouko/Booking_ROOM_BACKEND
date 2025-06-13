@@ -1,6 +1,5 @@
 package com.example.BookingRoom.ServiceImpl;
 
-import com.example.BookingRoom.Entities.Ecole;
 import com.example.BookingRoom.Entities.Etudiant;
 import com.example.BookingRoom.Entities.Filiere;
 import com.example.BookingRoom.Repository.EtudiantRepository;
@@ -45,7 +44,7 @@ public class EtudiantServiceImpl implements EtudiantService {
 
     @Override
     public List<Etudiant> getEtudaintByFiliere(Filiere filiere) {
-        return this.etudiantRepository.findByFiliere(filiere);
+        return this.etudiantRepository.findByFiliereOrderByNomAsc(filiere);
     }
 
     @Override

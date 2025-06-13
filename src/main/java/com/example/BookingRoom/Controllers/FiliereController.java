@@ -58,8 +58,8 @@ public class FiliereController {
     }
 
     // 🔹 Lister les filières d'une école
-    @GetMapping("/filiereEcole")
-    public List<Filiere> getFilieres(@RequestBody Long ecoleId) {
+    @GetMapping("/ecole")
+    public List<Filiere> getFilieres(@RequestParam Long ecoleId) {
         return filiereService.getfilierebyecole(ecoleService.findbyId(ecoleId));
     }
 

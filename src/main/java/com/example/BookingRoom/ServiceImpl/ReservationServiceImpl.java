@@ -4,13 +4,15 @@ import com.example.BookingRoom.Entities.*;
 import com.example.BookingRoom.Repository.ChambreRepository;
 import com.example.BookingRoom.Repository.ReservationRepository;
 import com.example.BookingRoom.Services.*;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
+@EnableScheduling
 @Service
     public class ReservationServiceImpl implements ReservationService {
 
@@ -18,12 +20,14 @@ import java.util.stream.Collectors;
         private final ChambreRepository chambreRepository;
         private final EcoleService ecoleService;
         private final FiliereService filiereservice;
+        private final MessagerieService messagerieService;
         private final EtudiantService etudiantservice;
 
-        public ReservationServiceImpl(ReservationRepository reservationRepository, ChambreRepository chambreRepository, EcoleService ecoleService, FiliereService filiereservice, EtudiantService etudiantservice) {
+        public ReservationServiceImpl(ReservationRepository reservationRepository, ChambreRepository chambreRepository, EcoleService ecoleService, FiliereService filiereservice, MessagerieService messagerieService, EtudiantService etudiantservice) {
             this.reservationRepository = reservationRepository;
             this.chambreRepository = chambreRepository;
             this.ecoleService = ecoleService;
+            this.messagerieService = messagerieService;
             this.etudiantservice = etudiantservice;
             this.filiereservice = filiereservice;
         }
@@ -150,6 +154,26 @@ import java.util.stream.Collectors;
 
              return resultat;
          }
+
+
+         //foonction qui envoie les mails chaque 12H pour l'échéance de la souscription
+    @Scheduled(cron = "0 0 0,12 * * *")
+    public void verifierReservationsEnEcheance() {
+        System.out.println("je mexecute chaque 30 SECONDE");
+        List<Reservation> reservationsEnAttente = this.getreservationbystatut(StatutReservation.EN_ATTENTE);
+
+        for (Reservation reservation : reservationsEnAttente) {
+            LocalDateTime dateReservation = reservation.getDateReservation();
+            LocalDateTime dateLimite = dateReservation.plusHours(48);
+            LocalDateTime seuilEcheance = dateLimite.minusHours(12);
+            LocalDateTime maintenant = LocalDateTime.now();
+
+            // Si on est au-delà du seuil de rappel
+            if (maintenant.isAfter(seuilEcheance) && maintenant.isBefore(dateLimite)) {
+                messagerieService.envoyerEmailEcheance(reservation); // À toi de définir cette méthode
+            }
+        }
+    }
 
 }
 

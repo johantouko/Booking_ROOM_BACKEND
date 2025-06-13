@@ -23,6 +23,11 @@ public class ChambreController {
     }
 
 
+    @GetMapping("/sexe")
+    public List<Chambre> getchambresbySexe(@RequestParam TypeSexeChambre sexe) {
+        return chambreService.getchambrebysexe(sexe);
+    }
+
 
     @PostMapping ("")
     public Map<String, Object> createChambre(@RequestBody Chambre chambre) {
@@ -84,6 +89,15 @@ public class ChambreController {
                 } else {
                     chambre.setTypechambre(TypeChambre.DOUBLE);
                 }
+
+                // Ajout du niveau
+                chambre.setNiveau(switch (niveau) {
+                    case 0 -> NiveauChambre.RDC;
+                    case 1 -> NiveauChambre.Niveau1;
+                    case 2 -> NiveauChambre.Niveau2;
+                    case 3 -> NiveauChambre.Niveau3;
+                    default -> throw new IllegalStateException("Niveau inconnu: " + niveau);
+                });
 
             response = this.createChambre(chambre);
             }

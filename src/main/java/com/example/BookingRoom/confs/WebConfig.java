@@ -14,10 +14,10 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") // autorise toutes les routes
-                        .allowedOrigins("http://localhost:4200") // ton app Angular
+                        .allowedOrigins("*") // ton app Angular
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        ;
             }
         };
     }

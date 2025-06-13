@@ -2,6 +2,7 @@ package com.example.BookingRoom.ServiceImpl;
 
 import com.example.BookingRoom.Entities.*;
 import com.example.BookingRoom.Repository.ChambreRepository;
+import com.example.BookingRoom.Repository.ReservationEnattenteRepository;
 import com.example.BookingRoom.Repository.ReservationRepository;
 import com.example.BookingRoom.Services.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -17,14 +18,16 @@ import java.util.stream.Collectors;
     public class ReservationServiceImpl implements ReservationService {
 
         private final ReservationRepository reservationRepository;
+        private final ReservationEnattenteRepository reservationEnattenteRepository;
         private final ChambreRepository chambreRepository;
         private final EcoleService ecoleService;
         private final FiliereService filiereservice;
         private final MessagerieService messagerieService;
         private final EtudiantService etudiantservice;
 
-        public ReservationServiceImpl(ReservationRepository reservationRepository, ChambreRepository chambreRepository, EcoleService ecoleService, FiliereService filiereservice, MessagerieService messagerieService, EtudiantService etudiantservice) {
+        public ReservationServiceImpl(ReservationRepository reservationRepository, ReservationEnattenteRepository reservationEnattenteRepository, ChambreRepository chambreRepository, EcoleService ecoleService, FiliereService filiereservice, MessagerieService messagerieService, EtudiantService etudiantservice) {
             this.reservationRepository = reservationRepository;
+            this.reservationEnattenteRepository = reservationEnattenteRepository;
             this.chambreRepository = chambreRepository;
             this.ecoleService = ecoleService;
             this.messagerieService = messagerieService;
@@ -155,8 +158,13 @@ import java.util.stream.Collectors;
              return resultat;
          }
 
+    @Override
+    public ReservationEnattente createreservationenattente(ReservationEnattente reservation) {
+        return this.reservationEnattenteRepository.save(reservation);
+    }
 
-         //foonction qui envoie les mails chaque 12H pour l'échéance de la souscription
+
+    //foonction qui envoie les mails chaque 12H pour l'échéance de la souscription
     @Scheduled(cron = "0 0 0,12 * * *")
     public void verifierReservationsEnEcheance() {
         System.out.println("je mexecute chaque 30 SECONDE");

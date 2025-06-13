@@ -1,9 +1,6 @@
 package com.example.BookingRoom.ServiceImpl;
 
-import com.example.BookingRoom.Entities.Chambre;
-import com.example.BookingRoom.Entities.Etudiant;
-import com.example.BookingRoom.Entities.StatutChambre;
-import com.example.BookingRoom.Entities.StatutEmplacement;
+import com.example.BookingRoom.Entities.*;
 import com.example.BookingRoom.Repository.ChambreRepository;
 import com.example.BookingRoom.Services.ChambreService;
 import org.springframework.stereotype.Service;
@@ -22,6 +19,11 @@ public class ChambreServiceImpl implements ChambreService {
     @Override
     public List<Chambre> getAllChambres() {
         return chambreRepository.findAll();
+    }
+
+    @Override
+    public List<Chambre> getchambrebysexe(TypeSexeChambre sexe) {
+        return this.chambreRepository.findByTypesexe(sexe);
     }
 
 

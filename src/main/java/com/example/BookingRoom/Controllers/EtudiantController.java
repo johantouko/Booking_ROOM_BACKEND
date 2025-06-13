@@ -78,4 +78,12 @@ public class EtudiantController {
     public List<Etudiant> getEtudiantbyfiliere(@RequestParam Long filiereid) {
         return etudiantService.getEtudaintByFiliere(filiereService.findbyId(filiereid));
     }
+
+    // 🔹 Lister les etudiant d'une filiere
+    @GetMapping("/id")
+    public Etudiant getEtudiantbyid(@RequestParam Long idetudiant) {
+        return etudiantService.getetudiantbyId(idetudiant);
+    }
+
+
 }

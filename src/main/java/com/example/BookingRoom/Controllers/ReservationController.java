@@ -6,6 +6,7 @@ import com.example.BookingRoom.Repository.ChambreRepository;
 import com.example.BookingRoom.Repository.EcoleRepository;
 import com.example.BookingRoom.Repository.FiliereRepository;
 import com.example.BookingRoom.Repository.ReservationRepository;
+import com.example.BookingRoom.ServiceImpl.SseService;
 import com.example.BookingRoom.Services.ChambreService;
 import com.example.BookingRoom.Services.EtudiantService;
 import com.example.BookingRoom.Services.MessagerieService;
@@ -13,8 +14,10 @@ import com.example.BookingRoom.Services.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +36,22 @@ public class ReservationController {
     private final EcoleRepository ecoleRepository;
     private final EtudiantService etudiantService;
     private final MessagerieService messagerieService;
+    private final SseService sseService;
 
     // 🔹 Lister toutes les réservations existantes
     @GetMapping(" ")
     public List<Reservation> getAllReservations() {
         return reservationService.getAllReservations();
     }
+
+    @GetMapping("/sse/allReservation")
+    public ResponseEntity<Void> getAllReservation() {
+        String message = "Liste-reservations";
+        sseService.broadcastToAllUsers(reservationService.getAllReservations(),message);
+        return ResponseEntity.noContent().build();
+    }
+
+
     @GetMapping("/enattente")
     public List<Reservation> getreservationenattente() {
         return reservationService.getreservationbystatut(StatutReservation.EN_ATTENTE);
@@ -51,6 +64,11 @@ public class ReservationController {
     public List<Reservation> getreservationaccepter() {
         return reservationService.getreservationbystatut(StatutReservation.CONFIRMEE);
     }
+    // 🔹 Lister les etudiant d'une filiere
+    @GetMapping("/id")
+    public Reservation getEtudiantbyid(@RequestParam Long idreservation) {
+        return reservationService.findById(idreservation);
+    }
 
     // 🔹 Créer une nouvelle réservation pour un étudiant
     @PostMapping(" ")
@@ -58,7 +76,7 @@ public class ReservationController {
         Map<String, Object> response = new HashMap<>();
         String emplacementchambre = request.getEmplacementchambre();
         Chambre chambre = chamreservice.getchambrebyid(request.getIdchambre());
-        Etudiant etudiant = etudiantService.getetudiantbyId(request.getIdEtudiant());
+        Etudiant etudiant = request.getEtudiant();
 
             if (chambre == null) {
                 response.put("message", "Chambre introuvable.");
@@ -70,6 +88,7 @@ public class ReservationController {
                 response.put("success", false);
                 return response;
             }
+
             Reservation reservation = new Reservation();
             reservation.setChambre(chambre);
             reservation.setEmplacementchambre(emplacementchambre);
@@ -91,6 +110,34 @@ public class ReservationController {
             if (reservationService.verifierReservationEtudiant(reservation.getEtudiant())) {
                 response.put("message", "Cet étudiant a déjà effectué une réservation.");
                 response.put("success", false);
+                return response;
+            }
+
+            Etudiant etudiantExistant = etudiantService.getetudiantbyId(etudiant.getId());
+
+            if (etudiantExistant != null) {
+                // Mise à jour des informations
+                etudiantExistant.setNom(etudiant.getNom());
+                etudiantExistant.setWhatsappEtudiant(etudiant.getWhatsappEtudiant());
+                etudiantExistant.setWhatsappParent(etudiant.getWhatsappParent());
+                etudiantExistant.setSexe(etudiant.getSexe());
+                etudiantExistant.setFiliere(etudiant.getFiliere());
+                etudiant = etudiantService.createEtudiant(etudiantExistant);
+            }
+
+            // ⚠ Vérifier le nombre de chambres disponibles
+            if (etudiant.getFiliere().getNombreChambresDisponibles() <= 0) {
+                // Créer une réservation en attente
+                ReservationEnattente attente = new ReservationEnattente();
+                attente.setEmplacementchambre(emplacementchambre);
+                attente.setEtudiant(etudiant);
+                attente.setDateReservation(LocalDateTime.now());
+
+                reservationService.createreservationenattente(attente);  // tu dois avoir un service pour ça
+                messagerieService.envoyerEmailListeAttente(attente);
+
+                response.put("message", "Plus de chambres disponibles dans cette filière. L'étudiant a été placé sur liste d’attente.");
+                response.put("success", true);
                 return response;
             }
 

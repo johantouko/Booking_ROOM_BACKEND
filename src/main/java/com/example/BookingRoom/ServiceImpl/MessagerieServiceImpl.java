@@ -2,6 +2,7 @@ package com.example.BookingRoom.ServiceImpl;
 
 import com.example.BookingRoom.Entities.Etudiant;
 import com.example.BookingRoom.Entities.Reservation;
+import com.example.BookingRoom.Entities.ReservationEnattente;
 import com.example.BookingRoom.Services.MessagerieService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -140,6 +141,37 @@ public class MessagerieServiceImpl implements MessagerieService {
                 Merci de votre compréhension, <br>
                 Service Logement <br>
                 Institut Universitaire Saint Jean du Cameroun<br>
+                
+                <br>
+                </body>
+                </html>
+                """.formatted(reservation.getEtudiant().getNom());
+        envoyer(reservation.getEtudiant().getEmail() , sujet, corps, null);
+    }
+
+    @Override
+    public void envoyerEmailListeAttente(ReservationEnattente reservation) {
+        String sujet = " Votre demande a été enregistrée – Vous êtes en liste d’attente !";
+        String corps = """
+                <html>
+                <body>
+                
+                Bonjour %s, <br><br>
+                
+                Votre demande de réservation de chambre à l’Institut Universitaire Saint Jean a bien été enregistrée.<br>
+                
+                Cependant, toutes les chambres sont actuellement occupées. Votre dossier a donc été placé en liste d’attente.<br>
+                
+                👉 Vous serez automatiquement contacté(e) par email ou WhatsApp si une chambre se libère dans les prochains jours.<br>
+               
+                ⚠ Merci de ne pas effectuer de paiement à cette étape. Aucun reçu ne sera traité tant que votre demande n’aura pas été validée.<br>
+                
+                Nous vous remercions pour votre compréhension.<br>
+                
+                Bien cordialement,<br>
+                Le service de gestion des résidences<br>
+                Institut Universitaire Saint Jean<br>
+            
                 
                 <br>
                 </body>

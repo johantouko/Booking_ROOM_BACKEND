@@ -37,6 +37,10 @@ public class Chambre {
     @Enumerated(EnumType.STRING)
     private TypeSexeChambre typesexe;
 
+    @Column(nullable = false, name="niveau")
+    @Enumerated(EnumType.STRING)
+    private NiveauChambre niveau;
+
     @Column(nullable = false, name="typechambre")
     @Enumerated(EnumType.STRING)
     private TypeChambre typechambre;

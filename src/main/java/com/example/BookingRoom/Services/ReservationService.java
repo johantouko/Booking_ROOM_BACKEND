@@ -22,6 +22,9 @@ public interface ReservationService {
 
     //Section liste des reservations en attente
     ReservationEnattente createreservationenattente(ReservationEnattente reservation );
+    List<ReservationEnattente> getAllReservationsenattente();
+    ReservationEnattente getFirstReservationsenattente();
+    boolean supprimerReservationEnAttente(Long id);
 
 
 

@@ -64,7 +64,6 @@ public class ReservationController {
     public List<Reservation> getreservationaccepter() {
         return reservationService.getreservationbystatut(StatutReservation.CONFIRMEE);
     }
-    // 🔹 Lister les etudiant d'une filiere
     @GetMapping("/id")
     public Reservation getEtudiantbyid(@RequestParam Long idreservation) {
         return reservationService.findById(idreservation);
@@ -75,37 +74,13 @@ public class ReservationController {
     public Map<String, Object> createReservation(@RequestBody ReservationRequestDTO request) {
         Map<String, Object> response = new HashMap<>();
         String emplacementchambre = request.getEmplacementchambre();
-        Chambre chambre = chamreservice.getchambrebyid(request.getIdchambre());
         Etudiant etudiant = request.getEtudiant();
 
-            if (chambre == null) {
-                response.put("message", "Chambre introuvable.");
-                response.put("success", false);
-                return response;
-            }
-            if (etudiant == null) {
-                response.put("message", "Etudiant introuvable.");
-                response.put("success", false);
-                return response;
-            }
-
             Reservation reservation = new Reservation();
-            reservation.setChambre(chambre);
             reservation.setEmplacementchambre(emplacementchambre);
             reservation.setEtudiant(etudiant);
             reservation.setStatut(StatutReservation.EN_ATTENTE);
 
-            if (reservation.getChambre().getStatut() == StatutChambre.OCCUPE) {
-                response.put("message", "cette chambre est déjà occupée.");
-                response.put("success", false);
-                return response;
-            }
-
-            if (reservation.getEtudiant().getSexe() != reservation.getChambre().getTypesexe()){
-                response.put("message", "La chambre sélectionnée est réservée à un sexe différent du vôtre.");
-                response.put("success", false);
-                return response;
-            }
 
             if (reservationService.verifierReservationEtudiant(reservation.getEtudiant())) {
                 response.put("message", "Cet étudiant a déjà effectué une réservation.");
@@ -121,15 +96,20 @@ public class ReservationController {
                 etudiantExistant.setWhatsappEtudiant(etudiant.getWhatsappEtudiant());
                 etudiantExistant.setWhatsappParent(etudiant.getWhatsappParent());
                 etudiantExistant.setSexe(etudiant.getSexe());
-                etudiantExistant.setFiliere(etudiant.getFiliere());
                 etudiant = etudiantService.createEtudiant(etudiantExistant);
+                reservation.setEtudiant(etudiantExistant);
+
+            } else {
+                response.put("message", "Etudiant introuvable.");
+                response.put("success", false);
+                return response;
             }
+
 
             // ⚠ Vérifier le nombre de chambres disponibles
             if (etudiant.getFiliere().getNombreChambresDisponibles() <= 0) {
                 // Créer une réservation en attente
                 ReservationEnattente attente = new ReservationEnattente();
-                attente.setEmplacementchambre(emplacementchambre);
                 attente.setEtudiant(etudiant);
                 attente.setDateReservation(LocalDateTime.now());
 
@@ -141,21 +121,44 @@ public class ReservationController {
                 return response;
             }
 
+        Chambre chambre = chamreservice.getchambrebyid(request.getIdchambre());
+        reservation.setChambre(chambre);
 
-        if (emplacementchambre.equalsIgnoreCase("litbas")) {
+
+        if (chambre == null) {
+            response.put("message", "Chambre introuvable.");
+            response.put("success", false);
+            return response;
+        }
+
+
+        if (reservation.getChambre().getStatut() == StatutChambre.OCCUPE) {
+            response.put("message", "cette chambre est déjà occupée.");
+            response.put("success", false);
+            return response;
+        }
+
+        if (reservation.getEtudiant().getSexe() != reservation.getChambre().getTypesexe()){
+            response.put("message", "La chambre sélectionnée est réservée à un sexe différent du vôtre.");
+            response.put("success", false);
+            return response;
+        }
+
+
+        if (emplacementchambre.equalsIgnoreCase("Lit bas")) {
             if (chambre.getLitbas() == StatutEmplacement.RESERVER) {
                 response.put("message", "Le lit bas de cette chambre est déjà réservé.");
                 response.put("success", false);
                 return response;
             }
-        } else if (emplacementchambre.equalsIgnoreCase("litmezzanine")) {
+        } else if (emplacementchambre.equalsIgnoreCase("Lit mezzanine")) {
             if (chambre.getLitmezzanine() == StatutEmplacement.RESERVER) {
                 response.put("message", "Le lit mezzanine de cette chambre est déjà réservé.");
                 response.put("success", false);
                 return response;}
 
         } else {
-            response.put("message", "Emplacement invalide. Choisissez entre 'litbas' ou 'litmezzanine'.");
+            response.put("message", "Emplacement invalide. Choisissez entre 'Lit bas' ou 'Lit mezzanine'.");
             response.put("success", false);
             return response;
         }
@@ -182,11 +185,13 @@ public class ReservationController {
                 response.put("success", false);
                 response.put("message", "Enregistrement échoué . Une erreur est survenue");
             }
+        String message = "Liste-reservations";
+        sseService.broadcastToAllUsers(reservationService.getAllReservations(),message);
             return response;
     }
 
-    @PostMapping("/validerReservation")
-    public Map<String, Object> accepterReservation( @RequestBody Long reservationId) {
+    @PostMapping("/validerReservation/{reservationId}")
+    public Map<String, Object> accepterReservation( @PathVariable Long reservationId) {
         Map<String, Object> response = new HashMap<>();
 
         // 1. Charger la réservation
@@ -213,13 +218,13 @@ public class ReservationController {
         Chambre chambre = reservation.getChambre();
 
         // 5. Mettre à jour l’emplacement demandé
-        if (emplacement.equalsIgnoreCase("litbas")) {
+        if (emplacement.equalsIgnoreCase("Lit bas")) {
             chambre.setLitbas(StatutEmplacement.OCCUPE);
-        } else if (emplacement.equalsIgnoreCase("litmezzanine")) {
+        } else if (emplacement.equalsIgnoreCase("Lit mezzanine")) {
             chambre.setLitmezzanine(StatutEmplacement.OCCUPE);
         } else {
             response.put("success", false);
-            response.put("message", "Emplacement invalide. Choisissez entre 'litbas' ou 'litmezzanine'.");
+            response.put("message", "Emplacement invalide. Choisissez entre 'Lit bas' ou 'Lit mezzanine'.");
             return response;
         }
 
@@ -243,12 +248,17 @@ public class ReservationController {
             response.put("success", false);
             response.put("message", "Enregistrement échoué . Une erreur est survenue");
         }
+        String message = "Liste-reservations";
+        sseService.broadcastToAllUsers(reservationService.getAllReservations(),message);
+        sseService.broadcastToAllUsers(reservationService.getStatsChambresOccupees(),message);
+        sseService.broadcastToAllUsers(reservationService.getStatsReservations(),message);
         return response;
+
 
     }
 
-    @PostMapping("/annulerReservation")
-    public Map<String, Object> annulerReservation( @RequestBody Long reservationId) {
+    @PostMapping("/annulerReservation/{reservationId}")
+    public Map<String, Object> annulerReservation( @PathVariable Long reservationId) {
         Map<String, Object> response = new HashMap<>();
 
         // 1. Charger la réservation
@@ -275,13 +285,13 @@ public class ReservationController {
         Chambre chambre = reservation.getChambre();
 
         // 5. Mettre à jour l’emplacement demandé
-        if (emplacement.equalsIgnoreCase("litbas")) {
+        if (emplacement.equalsIgnoreCase("Lit bas")) {
             chambre.setLitbas(StatutEmplacement.DISPONIBLE);
-        } else if (emplacement.equalsIgnoreCase("litmezzanine")) {
+        } else if (emplacement.equalsIgnoreCase("Lit mezzanine")) {
             chambre.setLitmezzanine(StatutEmplacement.DISPONIBLE);
         } else {
             response.put("success", false);
-            response.put("message", "Emplacement invalide. Choisissez entre 'litbas' ou 'litmezzanine'.");
+            response.put("message", "Emplacement invalide. Choisissez entre 'Lit bas' ou 'Lit mezzanine'.");
             return response;
         }
 
@@ -295,6 +305,14 @@ public class ReservationController {
         boolean reservationcreer = (nouvellereservation != null);
         if (reservationcreer){
             // 7. Mettre à jour les compteurs dans la filière
+
+            ReservationEnattente reservationEnattente = reservationService.getFirstReservationsenattente();
+            Reservation reservationaffecter = new Reservation();
+
+            reservationaffecter.setStatut(StatutReservation.EN_ATTENTE);
+            reservationaffecter.setEtudiant(reservationEnattente.getEtudiant());
+
+
             Filiere filiere = reservation.getEtudiant().getFiliere();
             filiere.setNombreChambresDisponibles(filiere.getNombreChambresDisponibles() + 0.5);
 
@@ -305,7 +323,6 @@ public class ReservationController {
             filiereRepository.save(filiere);
             ecoleRepository.save(ecole);
 
-
             chamreservice.majcahmabre(chambre);
             messagerieService.envoyerEmailAnnulation(nouvellereservation);
             response.put("message", "Réservation anulée avec succès.");
@@ -315,6 +332,10 @@ public class ReservationController {
             response.put("success", false);
             response.put("message", "Enregistrement échoué . Une erreur est survenue");
         }
+        String message = "Liste-reservations";
+        sseService.broadcastToAllUsers(reservationService.getAllReservations(),message);
+        sseService.broadcastToAllUsers(reservationService.getStatsChambresLibres(),message);
+        sseService.broadcastToAllUsers(reservationService.getStatsReservations(),message);
         return response;
 
     }
@@ -332,6 +353,27 @@ public class ReservationController {
     @GetMapping("/statreservations")
     public List<Map<String, Object>> reservationsConfirmees() {
         return reservationService.getStatsReservations();
+    }
+
+    @GetMapping("/sse/statchambres-libres")
+    public ResponseEntity<Void> SsechambresLibres() {
+        String message = "Chambre-libres";
+        sseService.broadcastToAllUsers(reservationService.getStatsChambresLibres(),message);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/sse/statchambres-occupees")
+    public ResponseEntity<Void> SsechambresOccupees() {
+        String message = "Chambre-Occupees";
+        sseService.broadcastToAllUsers(reservationService.getStatsChambresOccupees(),message);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/sse/statreservations")
+    public ResponseEntity<Void> SsereservationsConfirmees() {
+        String message = "Chambre-Occupees";
+        sseService.broadcastToAllUsers(reservationService.getStatsReservations(),message);
+        return ResponseEntity.noContent().build();
     }
 
 }

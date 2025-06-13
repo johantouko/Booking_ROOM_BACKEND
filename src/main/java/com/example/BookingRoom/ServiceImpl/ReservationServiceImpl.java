@@ -40,6 +40,28 @@ import java.util.stream.Collectors;
             return reservationRepository.findAll();
         }
 
+
+    @Override
+    public List<ReservationEnattente> getAllReservationsenattente() {
+        return reservationEnattenteRepository.findAllByOrderByDateReservationAsc();
+    }
+
+    @Override
+    public ReservationEnattente getFirstReservationsenattente() {
+        return reservationEnattenteRepository.findTopByOrderByDateReservationAsc();
+    }
+
+    @Override
+    public boolean supprimerReservationEnAttente(Long id) {
+        Optional<ReservationEnattente> reservation = reservationEnattenteRepository.findById(id);
+        if (reservation.isPresent()) {
+            reservationEnattenteRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+
     @Override
     public List<Reservation> getreservationbyetudiant(Etudiant etudiant) {
         return this.reservationRepository.findByEtudiant(etudiant);
@@ -53,9 +75,9 @@ import java.util.stream.Collectors;
         @Override
         public Reservation createReservation(Reservation reservation) {
 
-            if (reservation.getEmplacementchambre().equalsIgnoreCase("litbas")) {
+            if (reservation.getEmplacementchambre().equalsIgnoreCase("Lit bas")) {
                 reservation.getChambre().setLitbas(StatutEmplacement.RESERVER);
-            } else if (reservation.getEmplacementchambre().equalsIgnoreCase("litmezzanine")) {
+            } else if (reservation.getEmplacementchambre().equalsIgnoreCase("Lit mezzanine")) {
                 reservation.getChambre().setLitmezzanine(StatutEmplacement.RESERVER);
             }
             if  ((reservation.getChambre().getLitbas() == StatutEmplacement.RESERVER) && (reservation.getChambre().getLitmezzanine() == StatutEmplacement.RESERVER) ) {

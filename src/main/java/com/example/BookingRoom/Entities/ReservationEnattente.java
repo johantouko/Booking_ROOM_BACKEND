@@ -24,7 +24,6 @@ public class ReservationEnattente {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime dateReservation;
 
-    private String emplacementchambre;
 
     @ManyToOne
     @JoinColumn(name = "etudiant_id")

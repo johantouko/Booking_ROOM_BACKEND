@@ -23,13 +23,13 @@ public class ChambreServiceImpl implements ChambreService {
 
     @Override
     public List<Chambre> getchambrebysexe(TypeSexeChambre sexe) {
-        return this.chambreRepository.findByTypesexe(sexe);
+        return this.chambreRepository.findByTypesexeAndTypechambre(sexe, TypeChambre.DOUBLE);
     }
 
 
     @Override
     public List<Chambre> getChambresByStatut(String statut) {
-        return chambreRepository.findByStatut(statut);
+        return chambreRepository.findByStatutAndTypechambre(statut, TypeChambre.DOUBLE);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.example.BookingRoom.Entities.Reservation;
 import com.example.BookingRoom.Entities.ReservationEnattente;
 import com.example.BookingRoom.Entities.StatutReservation;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,7 +15,9 @@ public interface ReservationService {
     List<Reservation> getreservationbyetudiant(Etudiant etudiant);
     List<Reservation> getreservationbystatut(StatutReservation statut);
     Reservation createReservation(Reservation reservation );
+    Reservation updatereservation(Reservation reservation );
     public boolean verifierReservationEtudiant(Etudiant etudiant);
+    public boolean verifierReservationEtudiantListeAttente(Etudiant etudiant);
     Reservation  findById(Long id);
     List<Map<String, Object>> getStatsChambresLibres();
     List<Map<String, Object>> getStatsChambresOccupees();
@@ -25,7 +28,7 @@ public interface ReservationService {
     List<ReservationEnattente> getAllReservationsenattente();
     ReservationEnattente getFirstReservationsenattente();
     boolean supprimerReservationEnAttente(Long id);
-
+    LocalDateTime getdatefinreservation(LocalDateTime localDateTime);
 
 
 }

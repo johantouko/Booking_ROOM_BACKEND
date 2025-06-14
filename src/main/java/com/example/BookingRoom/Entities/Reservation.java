@@ -24,6 +24,9 @@ public class Reservation {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime dateReservation;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
+    private LocalDateTime dateFinReservation;
+
     private String emplacementchambre;
 
     @Enumerated(EnumType.STRING)

@@ -1,5 +1,6 @@
 package com.example.BookingRoom.Controllers;
 
+import com.example.BookingRoom.Entities.DTO.EtudiantRequestDTO;
 import com.example.BookingRoom.Entities.Etudiant;
 import com.example.BookingRoom.Entities.Filiere;
 import com.example.BookingRoom.Entities.Reservation;
@@ -28,36 +29,53 @@ public class EtudiantController {
 
     // 🔹 Créer un nouvel étudiant
     @PostMapping
-    public Map<String, Object> createEtudiant(@RequestBody Etudiant etudiant) {
-        Map<String, Object> response = new HashMap<>();
+    public Map<String, Object> createEtudiant(@RequestBody EtudiantRequestDTO request) {
 
-        if (etudiantService.nameExists(etudiant.getNom())){
-            response.put("message", "Ce nom existe déjà.");
-            response.put("success", false);
-            return response;
-        }
-        if (etudiantService.emailExists(etudiant.getEmail())){
-            response.put("message", "Cet email est déja utilisé.");
-            response.put("success", false);
-            return response;
-        }
-        if (etudiantService.telephoneExists(etudiant.getWhatsappEtudiant())) {
-            response.put("message", "Ce numero de telpehone est déja utilisé.");
-            response.put("success", false);
-            return response;
-        }
+        try {
+            Etudiant etudiant = new Etudiant();
+            etudiant.setNom(request.getNom());
+            etudiant.setEmail(request.getEmail());
+            etudiant.setWhatsappEtudiant(request.getWhatsappEtudiant());
+            etudiant.setWhatsappParent(request.getWhatsappParent());
+            etudiant.setSexe(request.getSexe());
+            etudiant.setFiliere(filiereService.findbyId(request.getFiliere()));
 
-        Etudiant nouvelEtudiant = etudiantService.createEtudiant(etudiant);
-        boolean etudiantCree = (nouvelEtudiant != null);
-        if (etudiantCree) {
-            response.put("success", true);
-            response.put("message", "Étudiant créé avec succès.");
-        }
-        else{
+
+            Map<String, Object> response = new HashMap<>();
+
+            if (etudiantService.nameExists(etudiant.getNom())){
+                response.put("message", "Ce nom existe déjà.");
+                response.put("success", false);
+                return response;
+            }
+            if (etudiantService.emailExists(etudiant.getEmail())){
+                response.put("message", "Cet email est déja utilisé.");
+                response.put("success", false);
+                return response;
+            }
+            if (etudiantService.telephoneExists(etudiant.getWhatsappEtudiant())) {
+                response.put("message", "Ce numero de telpehone est déja utilisé.");
+                response.put("success", false);
+                return response;
+            }
+
+            Etudiant nouvelEtudiant = etudiantService.createEtudiant(etudiant);
+            boolean etudiantCree = (nouvelEtudiant != null);
+            if (etudiantCree) {
+                response.put("success", true);
+                response.put("message", "Étudiant créé avec succès.");
+            }
+            else{
+                response.put("success", false);
+                response.put("message", "Enregistrement échoué. Une erreur est survenue");
+            }
+            return response;
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("message", "Enregistrement échoué . Une erreur est survenue");
+            response.put("message", "Enregistrement échoué. Une erreur est survenue");
+            return response;
         }
-        return response;
 
     }
 

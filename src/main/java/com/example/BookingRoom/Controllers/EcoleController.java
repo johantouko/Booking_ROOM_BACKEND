@@ -22,23 +22,30 @@ public class EcoleController {
     // 🔹 Créer une nouvelle école
     @PostMapping("")
     public Map<String, Object>  createEcole(@RequestBody Ecole ecole) {
-        Map<String, Object> response = new HashMap<>();
-        if (ecoleService.nameExists(ecole.getNom())){
-            response.put("message", "Cette école existe déjà.");
+        try {
+            Map<String, Object> response = new HashMap<>();
+            if (ecoleService.nameExists(ecole.getNom())){
+                response.put("message", "Cette école existe déjà.");
+                response.put("success", false);
+                return response;
+            }
+            Ecole nouvelleEcole = ecoleService.createEcole(ecole);
+            boolean ecolecreer = (nouvelleEcole != null);
+            if (ecolecreer){
+                response.put("message", "Ecole créée avec succès.");
+                response.put("success", true);
+                return response;
+            }   else{
+                response.put("success", false);
+                response.put("message", "Enregistrement échoué. Une erreur est survenue");
+            }
+            return response;
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
             response.put("success", false);
+            response.put("message", "Enregistrement échoué. Une erreur est survenue");
             return response;
         }
-        Ecole nouvelleEcole = ecoleService.createEcole(ecole);
-        boolean ecolecreer = (nouvelleEcole != null);
-        if (ecolecreer){
-            response.put("message", "Ecole créée avec succès.");
-            response.put("success", true);
-            return response;
-        }   else{
-            response.put("success", false);
-            response.put("message", "Enregistrement échoué . Une erreur est survenue");
-        }
-        return response;
     }
 
     @GetMapping("")

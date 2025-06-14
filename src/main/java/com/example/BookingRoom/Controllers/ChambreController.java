@@ -31,25 +31,32 @@ public class ChambreController {
 
     @PostMapping ("")
     public Map<String, Object> createChambre(@RequestBody Chambre chambre) {
-        Map<String, Object> response = new HashMap<>();
-        if (chambreService.numeroexists(chambre.getNumero())){
-            response.put("message", "Cette chambre existe déjà.");
+        try {
+            Map<String, Object> response = new HashMap<>();
+            if (chambreService.numeroexists(chambre.getNumero())){
+                response.put("message", "Cette chambre existe déjà.");
+                response.put("success", false);
+                return response;
+            }
+
+            Chambre nouvellechambre = chambreService.createChambre(chambre);
+            boolean chambrecreer = (nouvellechambre != null);
+            if (chambrecreer){
+                response.put("message", "Chambre créée avec succès.");
+                response.put("success", true);
+                return response;
+
+            }   else{
+                response.put("success", false);
+                response.put("message", "Enregistrement échoué. Une erreur est survenue");
+            }
+            return response;
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
             response.put("success", false);
+            response.put("message", "Enregistrement échoué. Une erreur est survenue");
             return response;
         }
-
-        Chambre nouvellechambre = chambreService.createChambre(chambre);
-        boolean chambrecreer = (nouvellechambre != null);
-        if (chambrecreer){
-            response.put("message", "Chambre créée avec succès.");
-            response.put("success", true);
-            return response;
-
-        }   else{
-            response.put("success", false);
-            response.put("message", "Enregistrement échoué . Une erreur est survenue");
-        }
-        return response;
     }
 
     @PostMapping("/importall")

@@ -8,7 +8,7 @@ import java.util.List;
 
 @Repository
 public interface ReservationEnattenteRepository extends JpaRepository<ReservationEnattente, Long> {
-
+    boolean existsByEtudiantId(Long etudiantId);
     List<ReservationEnattente> findAllByOrderByDateReservationAsc();
     ReservationEnattente findTopByOrderByDateReservationAsc();
 }

@@ -4,11 +4,13 @@ import com.example.BookingRoom.Entities.*;
 import com.example.BookingRoom.Repository.ChambreRepository;
 import com.example.BookingRoom.Repository.ReservationEnattenteRepository;
 import com.example.BookingRoom.Repository.ReservationRepository;
+import com.example.BookingRoom.Repository.UserRepository;
 import com.example.BookingRoom.Services.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -24,8 +26,9 @@ import java.util.stream.Collectors;
         private final FiliereService filiereservice;
         private final MessagerieService messagerieService;
         private final EtudiantService etudiantservice;
+        private final UserRepository userRepository;
 
-        public ReservationServiceImpl(ReservationRepository reservationRepository, ReservationEnattenteRepository reservationEnattenteRepository, ChambreRepository chambreRepository, EcoleService ecoleService, FiliereService filiereservice, MessagerieService messagerieService, EtudiantService etudiantservice) {
+        public ReservationServiceImpl(ReservationRepository reservationRepository, ReservationEnattenteRepository reservationEnattenteRepository, ChambreRepository chambreRepository, EcoleService ecoleService, FiliereService filiereservice, MessagerieService messagerieService, EtudiantService etudiantservice, UserRepository userRepository) {
             this.reservationRepository = reservationRepository;
             this.reservationEnattenteRepository = reservationEnattenteRepository;
             this.chambreRepository = chambreRepository;
@@ -33,6 +36,7 @@ import java.util.stream.Collectors;
             this.messagerieService = messagerieService;
             this.etudiantservice = etudiantservice;
             this.filiereservice = filiereservice;
+            this.userRepository = userRepository;
         }
 
         @Override
@@ -83,17 +87,37 @@ import java.util.stream.Collectors;
             if  ((reservation.getChambre().getLitbas() == StatutEmplacement.RESERVER) && (reservation.getChambre().getLitmezzanine() == StatutEmplacement.RESERVER) ) {
                 reservation.getChambre().setStatut(StatutChambre.RESERVER);
             }
+
+            if (reservation.getChambre().getLitbas() != StatutEmplacement.DISPONIBLE &&
+                    reservation.getChambre().getLitmezzanine() != StatutEmplacement.DISPONIBLE) {
+                reservation.getChambre().setStatut(StatutChambre.RESERVER);
+            }
             reservation.setDateReservation(LocalDateTime.now());
+            reservation.setDateFinReservation(this.getdatefinreservation(reservation.getDateReservation()));
             chambreRepository.save(reservation.getChambre());
             return reservationRepository.save(reservation);
+
         }
+
+    @Override
+    public Reservation updatereservation(Reservation reservation) {
+
+        return reservationRepository.save(reservation);
+    }
 
         @Override
         public boolean verifierReservationEtudiant(Etudiant etudiant) {
             return reservationRepository.existsByEtudiantId(etudiant.getId());
         }
 
-        @Override
+    @Override
+    public boolean verifierReservationEtudiantListeAttente(Etudiant etudiant) {
+        return  reservationEnattenteRepository.existsByEtudiantId(etudiant.getId());
+    }
+
+
+
+    @Override
         public Reservation findById(Long id) {
             return reservationRepository.findById(id).orElse(null);
         }
@@ -189,12 +213,11 @@ import java.util.stream.Collectors;
     //foonction qui envoie les mails chaque 12H pour l'échéance de la souscription
     @Scheduled(cron = "0 0 0,12 * * *")
     public void verifierReservationsEnEcheance() {
-        System.out.println("je mexecute chaque 30 SECONDE");
+        System.out.println("je mexecute chaque 12heures");
         List<Reservation> reservationsEnAttente = this.getreservationbystatut(StatutReservation.EN_ATTENTE);
 
         for (Reservation reservation : reservationsEnAttente) {
-            LocalDateTime dateReservation = reservation.getDateReservation();
-            LocalDateTime dateLimite = dateReservation.plusHours(48);
+            LocalDateTime dateLimite = reservation.getDateFinReservation();
             LocalDateTime seuilEcheance = dateLimite.minusHours(12);
             LocalDateTime maintenant = LocalDateTime.now();
 
@@ -203,6 +226,56 @@ import java.util.stream.Collectors;
                 messagerieService.envoyerEmailEcheance(reservation); // À toi de définir cette méthode
             }
         }
+    }
+
+    //foonction qui envoie les mails chaque 05H pour l'échéance de l'annulation
+    @Scheduled(cron = "0 0 0 * * *")
+    public void checkannulationcreservation() {
+        System.out.println("je mexecute chaque minuit");
+        List<Reservation> reservationsEnAttente = this.getreservationbystatut(StatutReservation.EN_ATTENTE);
+        List<User> users = this.userRepository.findAll();
+        for (Reservation reservation : reservationsEnAttente) {
+            LocalDateTime dateLimite = reservation.getDateFinReservation();
+            LocalDateTime maintenant = LocalDateTime.now();
+
+            // Si on est au-delà du seuil de rappel
+            if (maintenant.isAfter(dateLimite))  {
+                for (User user : users) {
+                    messagerieService.envoyermailechenceannulation(user, reservation); // À toi de définir cette méthode
+                }
+            }
+        }
+    }
+
+    /**
+     * Calcule une date de fin en ajoutant 48 heures ouvrées à une date donnée.
+     * - Les week-ends (samedi et dimanche) ne sont pas comptés dans les 48 heures.
+     * - Si la date de départ est un samedi ou dimanche, le calcul commence le lundi suivant à la même heure.
+     *
+
+     */
+    @Override
+    public  LocalDateTime getdatefinreservation(LocalDateTime dateDepart) {
+        // Si la date est un samedi ou un dimanche, on commence le lundi à la même heure
+        if (dateDepart.getDayOfWeek() == DayOfWeek.SATURDAY) {
+            dateDepart = dateDepart.plusDays(2); // Lundi
+        } else if (dateDepart.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            dateDepart = dateDepart.plusDays(1); // Lundi
+        }
+
+        int heuresAjoutees = 0;
+        LocalDateTime dateResultat = dateDepart;
+
+        while (heuresAjoutees < 48) {
+            dateResultat = dateResultat.plusHours(1);
+            DayOfWeek jour = dateResultat.getDayOfWeek();
+
+            if (jour != DayOfWeek.SATURDAY && jour != DayOfWeek.SUNDAY) {
+                heuresAjoutees++;
+            }
+        }
+
+        return dateResultat;
     }
 
 }

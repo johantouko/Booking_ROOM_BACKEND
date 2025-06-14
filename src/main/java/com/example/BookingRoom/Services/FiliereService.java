@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface FiliereService {
     Filiere createFiliere(Filiere filiere);
+    Filiere updatefiliere(Filiere filiere);
     Filiere findbyId(long filiere_id);
     public int getTotalChambresByEcole(Long ecoleId);
     public boolean nomFiliereExists(String nom);

@@ -13,5 +13,5 @@ import lombok.Setter;
 public class ReservationRequestDTO {
     private String emplacementchambre;
     private long idchambre;
-    private Etudiant etudiant;
+    private EtudiantRequestDTO etudiant;
 }

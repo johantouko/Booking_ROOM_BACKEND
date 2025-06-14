@@ -87,7 +87,7 @@ public class MessagerieServiceImpl implements MessagerieService {
                 <br><br><br>
                 </body>
                 </html>
-                """.formatted(reservation.getEtudiant().getNom(), formaterDateLecture(reservation.getDateReservation().plusHours(48)));
+                """.formatted(reservation.getEtudiant().getNom(), formaterDateLecture( reservation.getDateFinReservation()));
         envoyer(reservation.getEtudiant().getEmail(), sujet, corps, null );
     }
 

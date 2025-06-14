@@ -22,34 +22,41 @@ public class FiliereController {
     // 🔹 Créer une nouvelle filière
     @PostMapping("")
     public Map<String, Object> createFiliere(@RequestBody Filiere filiere) {
-        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> response = new HashMap<>();
 
-        Ecole ecole = ecoleService.findbyId(filiere.getEcole().getId());
+            Ecole ecole = ecoleService.findbyId(filiere.getEcole().getId());
 
-        if (filiereService.nomFiliereExists(filiere.getNom())){
-            response.put("message", "Cette filière existe déjà.");
+            if (filiereService.nomFiliereExists(filiere.getNom())){
+                response.put("message", "Cette filière existe déjà.");
+                response.put("success", false);
+                return response;
+            }
+
+            if (ecole.getNombreChambres() < ((filiereService.getTotalChambresByEcole(filiere.getEcole().getId())) + filiere.getNombreChambres()) ){
+                int nbrchambre = ecole.getNombreChambres() - filiereService.getTotalChambresByEcole(filiere.getEcole().getId());
+
+                response.put("message", "Le nomnbre de chambre est supérieur au total de votre école. \n Il vous reste "+ nbrchambre  + " chambres" );
+                response.put("success", false);
+                return response;
+            }
+            Filiere nouvellefiliere = filiereService.createFiliere(filiere);
+            boolean filierecreer = (nouvellefiliere != null);
+            if (filierecreer){
+                response.put("message", "Filière créée avec succès.");
+                response.put("success", true);
+                return response;
+            }   else{
+                response.put("success", false);
+                response.put("message", "Enregistrement échoué. Une erreur est survenue");
+            }
+            return response;
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
             response.put("success", false);
+            response.put("message", "Enregistrement échoué. Une erreur est survenue");
             return response;
         }
-
-        if (ecole.getNombreChambres() < ((filiereService.getTotalChambresByEcole(filiere.getEcole().getId())) + filiere.getNombreChambres()) ){
-            int nbrchambre = ecole.getNombreChambres() - filiereService.getTotalChambresByEcole(filiere.getEcole().getId());
-
-            response.put("message", "Le nomnbre de chambre est supérieur au total de votre école. \n Il vous reste "+ nbrchambre  + " chambres" );
-            response.put("success", false);
-            return response;
-        }
-        Filiere nouvellefiliere = filiereService.createFiliere(filiere);
-        boolean filierecreer = (nouvellefiliere != null);
-        if (filierecreer){
-            response.put("message", "Filière créée avec succès.");
-            response.put("success", true);
-            return response;
-        }   else{
-            response.put("success", false);
-            response.put("message", "Enregistrement échoué . Une erreur est survenue");
-        }
-        return response;
     }
 
     @GetMapping("")
@@ -61,6 +68,12 @@ public class FiliereController {
     @GetMapping("/ecole")
     public List<Filiere> getFilieres(@RequestParam Long ecoleId) {
         return filiereService.getfilierebyecole(ecoleService.findbyId(ecoleId));
+    }
+
+    // 🔹 Lister les filières d'une école
+    @GetMapping("/id")
+    public Filiere getfilierebyid(@RequestParam Long id) {
+        return filiereService.findbyId(id);
     }
 
 

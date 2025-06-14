@@ -3,6 +3,7 @@ package com.example.BookingRoom.Services;
 import com.example.BookingRoom.Entities.Etudiant;
 import com.example.BookingRoom.Entities.Reservation;
 import com.example.BookingRoom.Entities.ReservationEnattente;
+import com.example.BookingRoom.Entities.User;
 
 import java.time.LocalDateTime;
 
@@ -12,4 +13,5 @@ public interface MessagerieService {
     void envoyerEmailValidation(Reservation reservation);
     void envoyerEmailAnnulation(Reservation reservation);
     void envoyerEmailListeAttente(ReservationEnattente reservation);
+    void envoyermailechenceannulation(User user, Reservation reservation);
 }

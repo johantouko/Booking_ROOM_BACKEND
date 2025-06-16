@@ -41,11 +41,11 @@ public class MessagerieServiceImpl implements MessagerieService {
 
         ⚠ Vous disposez d’un <strong>délai de 48 heures</strong> à échéance <strong>%s</strong> pour :<br>
         1. Effectuer le paiement du loyer et de la caution<br>
-        2. Et <strong>déposer le reçu de paiement</strong> à la comptabilité<br><br>
+        2. Et <strong>déposer le reçu de paiement</strong> à la comptabilité en plus du fichier de récapitulatif imprimé.<br><br>
 
         Sans dépôt de reçu dans ce délai, votre demande sera automatiquement annulée.<br>
 
-        Merci pour votre réactivité,<br>
+        Merci pour votre réactivité.<br><br>
         L’équipe Logement<br>
         Institut Universitaire Saint Jean
         <br><br><br>
@@ -237,7 +237,7 @@ public class MessagerieServiceImpl implements MessagerieService {
     }
 
     public static String formaterDateLecture(LocalDateTime dateTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE 'le' d MMMM yyyy 'à' HH'H'mm 'minute'", Locale.FRENCH);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE 'le' d MMMM yyyy 'à' HH' h 'mm 'minutes'", Locale.FRENCH);
         return dateTime.format(formatter);
     }
 

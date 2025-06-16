@@ -39,12 +39,9 @@ public class UtilisateurController {
     @PostMapping(path = "/connexion")
     public Map<String, String> connexion(@RequestBody AuthentificationDTO authentificationDTO){
         System.out.println("cool..........");
-        System.out.println(authentificationDTO.username());
-        System.out.println(authentificationDTO.password());
         final Authentication authenticate = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authentificationDTO.username(), authentificationDTO.password())
         );
-        System.out.println("resultat {}" + authenticate);
         if(authenticate.isAuthenticated()){
             Map<String, String> response = new HashMap<>();
             Map<String, String> maptoken =  this.jwtService.generate(authentificationDTO.username());

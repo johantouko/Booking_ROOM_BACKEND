@@ -38,13 +38,11 @@ public class SecurityConfig {
                         .authorizeHttpRequests(
                                 authorize ->
                                         authorize
-                                                .requestMatchers(POST, "/connexion").permitAll()
-                                                .requestMatchers(GET, "/verifiertoken").permitAll()
-
-//                                                .requestMatchers(POST, "/reservations").permitAll()
-                                                .requestMatchers("/reservations/creer").permitAll()
+                                                .requestMatchers("/connexion").permitAll()
+                                                .requestMatchers("/reservations/**").permitAll()
+                                                .requestMatchers("/sse/**").permitAll()
                                                 .requestMatchers("/creeruser").permitAll()
-
+                                                .requestMatchers(GET, "/verifiertoken").permitAll()
                                                 .requestMatchers(GET, "/ecoles").permitAll()
                                                 .requestMatchers(GET, "/filieres/ecole").permitAll()
                                                 .requestMatchers(GET, "/filieres/id").permitAll()

@@ -17,6 +17,7 @@ public class WebConfig {
                         .allowedOrigins("*") // ton app Angular
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
+                        .exposedHeaders("Authorization");
                         ;
             }
         };

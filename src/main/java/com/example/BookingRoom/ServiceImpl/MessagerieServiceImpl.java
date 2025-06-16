@@ -3,6 +3,7 @@ package com.example.BookingRoom.ServiceImpl;
 import com.example.BookingRoom.Entities.Etudiant;
 import com.example.BookingRoom.Entities.Reservation;
 import com.example.BookingRoom.Entities.ReservationEnattente;
+import com.example.BookingRoom.Entities.User;
 import com.example.BookingRoom.Services.MessagerieService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -180,14 +181,39 @@ public class MessagerieServiceImpl implements MessagerieService {
         envoyer(reservation.getEtudiant().getEmail() , sujet, corps, null);
     }
 
-//    private void envoyer(String to, String sujet, String corps) {
-//        SimpleMailMessage message = new SimpleMailMessage();
-//        message.setFrom("cite@universitesaintjean.org"); // À remplacer par ton adresse d'envoi
-//        message.setTo(to);
-//        message.setSubject(sujet);
-//        message.setText(corps);
-//        mailSender.send(message);
-//    }
+    @Override
+    public void envoyermailechenceannulation(User user, Reservation reservation) {
+        String sujet = " Réservation à annuler si le paiement n’est pas confirmé. !";
+        String corps = """
+                <html>
+                <body>
+                
+                Bonjour %s, <br><br>
+                
+                Une réservation a été soumise il y a plus de 47 heures sans que le reçu de paiement ne soit encore déposé ou validé.<br>
+                Elle est donc susceptible d’être annulée automatiquement à l’expiration du délai de 48 heures.<br>
+                
+                Détails de la réservation concernée : <br>
+                
+                Nom complet : %s, <br>
+                Email : %s,<br>
+                Filière : %s,<br>
+                Numéro de chambre : %s,<br>
+                Date de soumission : %s.<br>
+                
+                Vous pouvez intervenir manuellement dans le tableau de bord administrateur .<br>
+                
+                Cordialement,<br>
+                L’équipe BookingRoom<br>
+               
+                <br>
+                </body>
+                </html>
+                """.formatted(user.getNom(), reservation.getEtudiant().getNom(),  reservation.getEtudiant().getEmail(), reservation.getEtudiant().getFiliere().getNom() ,
+                reservation.getChambre().getNumero(), formaterDateLecture( reservation.getDateReservation()));
+        envoyer(reservation.getEtudiant().getEmail() , sujet, corps, null);
+    }
+
 
     private void envoyer(String to, String sujet, String corpsHtml, File pieceJointe) {
         try {

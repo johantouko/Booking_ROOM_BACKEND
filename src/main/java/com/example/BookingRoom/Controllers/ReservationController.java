@@ -57,9 +57,6 @@ public class ReservationController {
         return ResponseEntity.noContent().build();
     }
 
-
-
-
     @GetMapping("/enattente")
     public List<Reservation> getreservationenattente() {
         return reservationService.getreservationbystatut(StatutReservation.EN_ATTENTE);
@@ -78,9 +75,8 @@ public class ReservationController {
     }
 
     // 🔹 Créer une nouvelle réservation pour un étudiant
-    @PostMapping(" ")
+    @PostMapping("/creer")
     public Map<String, Object> createReservation(@RequestBody ReservationRequestDTO request) {
-
         try {
             Map<String, Object> response = new HashMap<>();
             String emplacementchambre = request.getEmplacementchambre();
@@ -206,7 +202,7 @@ public class ReservationController {
                 String message = "Liste-reservations";
                 sseService.broadcastToAllUsers(reservationService.getAllReservations(),message);
 
-                response.put("message", "Réservation créée avec succès.");
+                response.put("message", "Veuillez cliquer sur le bouton télécharger ci-dessous. \n Vous allez imprimer ce fichier et le joindre au reçu de paiement que vous déposerez à la comptabilité.");
                 response.put("success", true);
                 return response;
             }   else{

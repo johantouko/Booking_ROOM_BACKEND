@@ -61,10 +61,6 @@ public class EcoleController {
     }
 
 
-
-
-
-
     // 🔹 Lister toutes les réservations des étudiants d'une école
 //    @GetMapping("/{ecoleId}/reservations")
 //    public List<Reservation> getReservations(@PathVariable Long ecoleId) {

@@ -25,10 +25,8 @@ public class Etudiant {
     private int whatsappParent;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name="sexe")
     private TypeSexeChambre sexe;
 
-    @Column(nullable = false, name="email")
     private String email;
 
     @ManyToOne

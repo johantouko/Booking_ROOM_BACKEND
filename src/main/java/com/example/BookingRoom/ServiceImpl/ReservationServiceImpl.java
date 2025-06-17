@@ -127,8 +127,8 @@ import java.util.stream.Collectors;
             for (Ecole ecole : ecoles) {
                 Map<String, Object> ligne = new HashMap<>();
                 ligne.put("ecole", ecole.getNom());
-                ligne.put("totalChambres", ecole.getNombreChambres());
-                ligne.put("chambresLibres", ecole.getNombreChambresDisponibles());
+                ligne.put("totalChambres", (ecole.getNombreChambres()-ecole.getNombreChambresIndividuelle())*2 + ecole.getNombreChambresIndividuelle());
+                ligne.put("chambresLibres", ecole.getNombreChambresDisponibles()*2);
                 resultat.add(ligne);
             }
 
@@ -151,19 +151,14 @@ import java.util.stream.Collectors;
                          .flatMap(e -> this.getreservationbyetudiant(e).stream())
                          .toList();
 
-                 Set<Chambre> chambres = reservations.stream()
-                         .map(Reservation::getChambre)
-                         .collect(Collectors.toSet());
 
-
-
-                 long occupees = chambres.stream()
-                         .filter(c -> c.getStatut() == StatutChambre.OCCUPE)
+                 long occupees = reservations.stream()
+                         .filter(r -> r.getStatut() == StatutReservation.CONFIRMEE)
                          .count();
 
                  Map<String, Object> ligne = new HashMap<>();
                  ligne.put("ecole", ecole.getNom());
-                 ligne.put("totalChambres", ecole.getNombreChambres());
+                 ligne.put("totalChambres", (ecole.getNombreChambres()-ecole.getNombreChambresIndividuelle())*2 + ecole.getNombreChambresIndividuelle());
                  ligne.put("chambresOccupees", occupees);
                  resultat.add(ligne);
              }

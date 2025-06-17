@@ -31,7 +31,7 @@ public class EcoleServiceImpl implements EcoleService {
 
     @Override
     public Ecole createEcole(Ecole ecole) {
-        ecole.setNombreChambresDisponibles(ecole.getNombreChambres());
+        ecole.setNombreChambresDisponibles(ecole.getNombreChambres() - ecole.getNombreChambresIndividuelle());
         return ecoleRepository.save(ecole);
     }
 

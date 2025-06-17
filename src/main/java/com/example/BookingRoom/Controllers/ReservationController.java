@@ -8,17 +8,32 @@ import com.example.BookingRoom.Repository.FiliereRepository;
 import com.example.BookingRoom.Repository.ReservationRepository;
 import com.example.BookingRoom.ServiceImpl.SseService;
 import com.example.BookingRoom.Services.*;
+import com.lowagie.text.Font;
+import com.lowagie.text.Image;
+import com.lowagie.text.pdf.*;
 import jakarta.mail.Message;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.lowagie.text.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.awt.*;
+import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/reservations")
@@ -142,6 +157,35 @@ public class ReservationController {
                 return response;
             }
 
+            // ✅ Vérification spécifique du nombre de chambres disponibles selon le sexe si sigle == "PV"
+            Filiere filiere = reservation.getEtudiant().getFiliere();
+//            Filiere filiereune = etudiant.getFiliere();
+//            Ecole ecoleune = filiere.getEcole();
+            Ecole ecole = filiere.getEcole();
+
+
+            if ("PV".equalsIgnoreCase(ecole.getSigle())) {
+                if ((etudiant.getSexe() == TypeSexeChambre.FEMININ && filiere.getNombreChambresFilledisponible() <= 0) || (etudiant.getSexe() == TypeSexeChambre.MASCULIN && filiere.getNombreChambresGarcondisponible() <= 0)) {
+
+                    if (reservationService.verifierReservationEtudiantListeAttente(reservation.getEtudiant())) {
+                        response.put("message", "Cet étudiant est déjà sur une liste d'attente.");
+                        response.put("success", false);
+                        return response;
+                    }
+
+                    ReservationEnattente attente = new ReservationEnattente();
+                    attente.setEtudiant(etudiant);
+                    attente.setDateReservation(LocalDateTime.now());
+
+                    reservationService.createreservationenattente(attente);  // tu dois avoir un service pour ça
+                    messagerieService.envoyerEmailListeAttente(attente);
+
+                    response.put("message", "Plus de chambres disponibles dans cette filière. L'étudiant a été placé sur liste d’attente.");
+                    response.put("success", true);
+                    return response;
+                }
+            }
+
             Chambre chambre = chambreservice.getchambrebyid(request.getIdchambre());
             reservation.setChambre(chambre);
 
@@ -151,7 +195,6 @@ public class ReservationController {
                 response.put("success", false);
                 return response;
             }
-
 
             if (reservation.getChambre().getStatut() == StatutChambre.OCCUPE) {
                 response.put("message", "cette chambre est déjà occupée.");
@@ -188,12 +231,27 @@ public class ReservationController {
             boolean reservationcreer = (nouvellereservation != null);
             if (reservationcreer){
                 // 7. Mettre à jour les compteurs dans la filière
-                Filiere filiere = reservation.getEtudiant().getFiliere();
-                filiere.setNombreChambresDisponibles(filiere.getNombreChambresDisponibles() - 0.5);
+//                filiere.setNombreChambresDisponibles(filiere.getNombreChambresDisponibles() - 0.5);
+                filiere.setNombreChambresDisponibles(Math.max(0, filiere.getNombreChambresDisponibles() - 0.5));
+
 
                 // 8. Mettre à jour les compteurs dans l’école
-                Ecole ecole = filiere.getEcole();
-                ecole.setNombreChambresDisponibles(ecole.getNombreChambresDisponibles() - 0.5); // assure-toi que ce champ existe bien
+//                ecole.setNombreChambresDisponibles(ecole.getNombreChambresDisponibles() - 0.5); // assure-toi que ce champ existe bien
+                ecole.setNombreChambresDisponibles(Math.max(0, ecole.getNombreChambresDisponibles() - 0.5));
+
+
+                if ("PV".equalsIgnoreCase(filiere.getEcole().getSigle())) {
+                    if (etudiant.getSexe() == TypeSexeChambre.FEMININ) {
+//                        filiere.setNombreChambresFilledisponible(filiere.getNombreChambresFilledisponible() - 0.5);
+                        filiere.setNombreChambresFilledisponible(Math.max(0, filiere.getNombreChambresFilledisponible() - 0.5));
+
+
+                    } else {
+//                        filiere.setNombreChambresGarcondisponible(filiere.getNombreChambresGarcondisponible() - 0.5);
+                        filiere.setNombreChambresGarcondisponible(Math.max(0, filiere.getNombreChambresGarcondisponible() - 0.5));
+
+                    }
+                }
 
                 filiereService.updatefiliere(filiere);
                 ecoleRepository.save(ecole);
@@ -326,15 +384,6 @@ public class ReservationController {
             // 3. Changer le statut de la réservation
             reservation.setStatut(StatutReservation.REFUSEE);
 
-            // 4. Récupérer la chambre
-            Chambre chambre = reservation.getChambre();
-
-            // 6. Si les deux emplacements sont Occupe  → chambre occupée
-            if (chambre.getLitbas() == StatutEmplacement.DISPONIBLE &&
-                    chambre.getLitmezzanine() == StatutEmplacement.DISPONIBLE) {
-                chambre.setStatut(StatutChambre.LIBRE);
-            }
-
             Reservation nouvellereservation = reservationService.updatereservation(reservation);
             boolean reservationcreer = (nouvellereservation != null);
             if (reservationcreer){
@@ -342,7 +391,6 @@ public class ReservationController {
 
                this.affecterEtudiantDepuisListeAttente(nouvellereservation);
 
-                chambreservice.majcahmabre(chambre);
                 messagerieService.envoyerEmailAnnulation(nouvellereservation);
                 String message = "Liste-reservations";
                 sseService.broadcastToAllUsers(reservationService.getAllReservations(),message);
@@ -398,18 +446,30 @@ public class ReservationController {
         }
         if (!etudiantAffecte) {
 
+            Chambre chambre = reservation.getChambre();
+            System.out.println(chambre.getNumero() + "numero de la chambre");
             // 5. Mettre à jour l’emplacement demandé
             if (reservation.getEmplacementchambre().equalsIgnoreCase("Lit bas")) {
-                reservation.getChambre().setLitbas(StatutEmplacement.DISPONIBLE);
+                chambre.setLitbas(StatutEmplacement.DISPONIBLE);
             } else if (reservation.getEmplacementchambre().equalsIgnoreCase("Lit mezzanine")) {
-                reservation.getChambre().setLitmezzanine(StatutEmplacement.DISPONIBLE);
+                chambre.setLitmezzanine(StatutEmplacement.DISPONIBLE);
             }
 
-            reservation.getChambre().setStatut(StatutChambre.LIBRE);
-            chambreservice.majcahmabre(reservation.getChambre());
+            chambre.setStatut(StatutChambre.LIBRE);
+            System.out.println(chambre.getId());
+            System.out.println(chambre.getStatut() + "chambre statut");
+            chambreservice.majcahmabre(chambre);
 
             Filiere filiere = reservation.getEtudiant().getFiliere();
             filiere.setNombreChambresDisponibles(filiere.getNombreChambresDisponibles() + 0.5);
+            // ✅ Mise à jour spécifique si l’école a le sigle PV
+            if ("PV".equalsIgnoreCase(filiere.getEcole().getSigle())) {
+                if (reservation.getEtudiant().getSexe() == TypeSexeChambre.FEMININ) {
+                    filiere.setNombreChambresFilledisponible(filiere.getNombreChambresFilledisponible() + 0.5);
+                } else if (reservation.getEtudiant().getSexe() == TypeSexeChambre.MASCULIN) {
+                    filiere.setNombreChambresGarcondisponible(filiere.getNombreChambresGarcondisponible() + 0.5);
+                }
+            }
             filiereService.updatefiliere(filiere);
 
             Ecole ecole = filiere.getEcole();
@@ -461,5 +521,159 @@ public class ReservationController {
         sseService.broadcastToAllUsers(reservationService.getStatsReservations(),message);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/pdf")
+    public ResponseEntity<byte[]> genererPdfStatistiques() {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Document document = new Document(PageSize.A4);
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            BaseFont baseFont = BaseFont.createFont("src/main/resources/fonts/Montserrat-Regular.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            Font fontTitre = new Font(baseFont, 18, Font.BOLD);
+            Font fontCell = new Font(baseFont, 12);
+
+            // === PAGE DE GARDE ===
+            Image logo = Image.getInstance("src/main/resources/static/logo.png");
+            logo.scaleToFit(400, 400);
+            logo.setAlignment(Image.ALIGN_CENTER);
+            for (int i = 0; i < 8; i++) document.add(new Paragraph(" "));
+            document.add(logo);
+
+            Paragraph titre = new Paragraph("Cité universitaire – Répartition des chambres 2025/2026", fontTitre);
+            titre.setAlignment(Element.ALIGN_CENTER);
+            titre.setSpacingBefore(30);
+            document.add(titre);
+
+            // === DONNÉES ===
+            List<Chambre> chambres = chambreservice.getAllChambres();
+            List<Reservation> reservations = reservationService.getreservationbystatut(StatutReservation.CONFIRMEE);
+
+            // Groupement par niveau enum
+            Map<NiveauChambre, List<Chambre>> chambresParNiveau = chambres.stream()
+                    .sorted(Comparator.comparing(Chambre::getNumero))
+                    .collect(Collectors.groupingBy(
+                            Chambre::getNiveau,
+                            () -> new TreeMap<>(Comparator.comparing(Enum::ordinal)),
+                            Collectors.toList()
+                    ));
+
+            for (Map.Entry<NiveauChambre, List<Chambre>> entry : chambresParNiveau.entrySet()) {
+                NiveauChambre niveau = entry.getKey();
+                List<Chambre> chambresDuNiveau = entry.getValue();
+
+                document.newPage();
+
+                String nomNiveau = switch (niveau) {
+                    case RDC -> "Rez-de-chaussée";
+                    case Niveau1 -> "Niveau 1";
+                    case Niveau2 -> "Niveau 2";
+                    case Niveau3 -> "Niveau 3";
+                };
+
+                Paragraph titreNiveau = new Paragraph("Répartition – " + nomNiveau, fontTitre);
+                titreNiveau.setAlignment(Element.ALIGN_LEFT);
+                titreNiveau.setSpacingAfter(20);
+                document.add(titreNiveau);
+
+                PdfPTable table = new PdfPTable(4);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{7f, 43f, 7f, 43f});
+                table.setSpacingBefore(10f);
+
+                int ligne = 0;
+
+                for (int i = 0; i < chambresDuNiveau.size(); i += 2) {
+                    Chambre ch1 = chambresDuNiveau.get(i);
+                    Chambre ch2 = (i + 1 < chambresDuNiveau.size()) ? chambresDuNiveau.get(i + 1) : null;
+
+                    PdfPCell cell1 = new PdfPCell(new Phrase(ch1.getNumero() + "", fontCell));
+                    PdfPCell cell2 = new PdfPCell(buildContenuChambre(ch1, reservations, fontCell));
+                    PdfPCell cell3 = new PdfPCell(new Phrase(ch2 != null ? ch2.getNumero() + "" : "", fontCell));
+                    PdfPCell cell4 = new PdfPCell(ch2 != null ? buildContenuChambre(ch2, reservations, fontCell) : new Paragraph("", fontCell));
+
+                    Stream.of(cell1, cell2, cell3, cell4).forEach(cell -> {
+                        cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+                        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                        cell.setFixedHeight(55f); // hauteur augmentée pour 2 lignes + espace
+                        cell.setPaddingLeft(8f);
+                    });
+
+                    if (ligne % 2 == 1) {
+                        Color gris = new Color(230, 230, 230);
+                        Stream.of(cell1, cell2, cell3, cell4).forEach(c -> c.setBackgroundColor(gris));
+                    }
+
+                    table.addCell(cell1);
+                    table.addCell(cell2);
+                    table.addCell(cell3);
+                    table.addCell(cell4);
+                    ligne++;
+                }
+
+                document.add(table);
+            }
+
+            document.close();
+
+            byte[] pdfBytes = baos.toByteArray();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "repartition_chambres_complet.pdf");
+
+            return ResponseEntity.ok().headers(headers).body(pdfBytes);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private Paragraph buildContenuChambre(Chambre chambre, List<Reservation> reservations, Font font) {
+        Paragraph contenu = new Paragraph();
+        contenu.setFont(font);
+
+        if (chambre.getTypechambre().equals(TypeChambre.INDIVIDUELLE)) {
+            String nom = reservations.stream()
+                    .filter(r -> r.getChambre().getId().equals(chambre.getId()))
+                    .map(r -> "- " + r.getEtudiant().getNom() + " / " + r.getEtudiant().getWhatsappEtudiant())
+                    .findFirst().orElse("- ");
+            contenu.add(new Phrase(nom));
+        } else {
+            String lit1 = reservations.stream()
+                    .filter(r -> r.getChambre().getId().equals(chambre.getId()) && "Lit bas".equalsIgnoreCase(r.getEmplacementchambre()))
+                    .map(r -> "1 - " + r.getEtudiant().getNom() + " / " + r.getEtudiant().getWhatsappEtudiant())
+                    .findFirst().orElse("1 -");
+
+            String lit2 = reservations.stream()
+                    .filter(r -> r.getChambre().getId().equals(chambre.getId()) && "Lit mezzanine".equalsIgnoreCase(r.getEmplacementchambre()))
+                    .map(r -> "2 - " + r.getEtudiant().getNom() + " / " + r.getEtudiant().getWhatsappEtudiant())
+                    .findFirst().orElse("2 -");
+
+            contenu.add(new Phrase(lit1));
+            contenu.add(Chunk.NEWLINE);
+            contenu.add(Chunk.NEWLINE); // espacement entre lit 1 et lit 2
+            contenu.add(new Phrase(lit2));
+        }
+
+        return contenu;
+    }
+
+
+    // === DÉTERMINATION DU NIVEAU ===
+    private int determinerNiveau(String numeroChambre) {
+        try {
+            int num = Integer.parseInt(numeroChambre);
+            if (num >= 0 && num <= 32) return 0;
+            if (num >= 101 && num <= 132) return 1;
+            if (num >= 201 && num <= 232) return 2;
+            if (num >= 301 && num <= 332) return 3;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+        return -1;
+    }
+
 
 }

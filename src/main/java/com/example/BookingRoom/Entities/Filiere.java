@@ -22,6 +22,14 @@ public class Filiere {
     private int nombreChambres;
     private double nombreChambresDisponibles;
 
+    private double nombreChambresFilledisponible;
+    private int nombreChambresFille;
+    private int nombreChambresGarcon;
+    private double nombreChambresGarcondisponible;
+
+
+
+
     @ManyToOne
     @JoinColumn(name = "ecole")
     private Ecole ecole;

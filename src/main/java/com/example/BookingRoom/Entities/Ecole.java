@@ -29,4 +29,7 @@ public class Ecole {
     @Column(nullable = false, name="nombreChambres")
     private int nombreChambres;
 
+    @Column(nullable = false, name="nombreChambresIndividuelle")
+    private int nombreChambresIndividuelle;
+
 }

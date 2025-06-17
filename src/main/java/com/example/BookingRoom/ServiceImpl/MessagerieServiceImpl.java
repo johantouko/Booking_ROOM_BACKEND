@@ -3,14 +3,13 @@ package com.example.BookingRoom.ServiceImpl;
 import com.example.BookingRoom.Entities.Etudiant;
 import com.example.BookingRoom.Entities.Reservation;
 import com.example.BookingRoom.Entities.ReservationEnattente;
-import com.example.BookingRoom.Entities.User;
+import com.example.BookingRoom.Entities.Utilisateur;
 import com.example.BookingRoom.Services.MessagerieService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -182,7 +181,7 @@ public class MessagerieServiceImpl implements MessagerieService {
     }
 
     @Override
-    public void envoyermailechenceannulation(User user, Reservation reservation) {
+    public void envoyermailechenceannulation(Utilisateur user, Reservation reservation) {
         String sujet = " Réservation à annuler si le paiement n’est pas confirmé. !";
         String corps = """
                 <html>

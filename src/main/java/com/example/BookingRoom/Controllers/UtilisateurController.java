@@ -2,6 +2,8 @@ package com.example.BookingRoom.Controllers;
 
 
 import com.example.BookingRoom.Entities.DTO.AuthentificationDTO;
+import com.example.BookingRoom.Entities.DTO.InfosconnexionDto;
+import com.example.BookingRoom.Entities.DTO.InfosuserDto;
 import com.example.BookingRoom.Entities.Utilisateur;
 import com.example.BookingRoom.Services.UtilisateurService;
 import com.example.BookingRoom.jwt.JwtService;
@@ -14,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -28,12 +31,13 @@ public class UtilisateurController {
     private AuthenticationManager authenticationManager;
     private UtilisateurService utilisateurService;
     private JwtService jwtService;
-    //private PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
-    public UtilisateurController(AuthenticationManager authenticationManager, UtilisateurService utilisateurService, JwtService jwtService) {
+    public UtilisateurController(AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, UtilisateurService utilisateurService, JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.utilisateurService = utilisateurService;
         this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping(path = "/connexion")
@@ -49,6 +53,7 @@ public class UtilisateurController {
             response.put("username", authentificationDTO.username());
             response.put("token", maptoken.get("token"));
             Utilisateur utilisateur = utilisateurService.getUtilisateurByEmail(authentificationDTO.username());
+            response.put("nom", utilisateur.getNom());
             response.put("roles", utilisateur.concatenateRoles(utilisateur.getRoles()));
             utilisateur.setToken(maptoken.get("token"));
             utilisateurService.modifier(utilisateur);
@@ -117,6 +122,70 @@ public class UtilisateurController {
             utilisateur.setToken(null);
             utilisateurService.modifier(utilisateur);
         }
+    }
+
+    @PostMapping(path = "/infosuser")
+    public Map<String, Object> majinfosuser(@RequestBody InfosuserDto request){
+        try {
+            Map<String, Object> response = new HashMap<>();
+            String emailconecter = request.getEmailutilisateurconnecter();
+            Utilisateur utilisateur = utilisateurService.getUtilisateurByEmail(emailconecter);
+
+            if (!Objects.equals(emailconecter, request.getEmail())){
+            if (utilisateurService.emailExists(request.getEmail())) {
+                response.put("message", "Cet email est déjà utilisé.");
+                response.put("success", false);
+                return response;
+            }}
+            utilisateur.setEmail(request.getEmail());
+            utilisateur.setNom(request.getNom());
+            utilisateurService.modifier(utilisateur);
+
+            response.put("success", true);
+            response.put("message", "Information mis a jour avec success.");
+            return response;
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Enregistrement échoué. Une erreur est survenue");
+            return response;
+        }
+
+    }
+
+    @PostMapping(path = "/infosconnexion")
+    public Map<String, Object> majinfosconnexion(@RequestBody InfosconnexionDto request){
+        try {
+            Map<String, Object> response = new HashMap<>();
+            String emailconecter = request.getEmailutilisateurconnecter();
+            Utilisateur utilisateur = utilisateurService.getUtilisateurByEmail(emailconecter);
+
+            if (utilisateur == null) {
+                response.put("success", false);
+                response.put("message", "Utilisateur non trouvé.");
+                return response;
+            }
+
+            // ✅ Comparer l'ancien mot de passe avec celui stocké en BD
+            if (!passwordEncoder.matches(request.getAncien(), utilisateur.getMotDePasse())) {
+                response.put("success", false);
+                response.put("message", "Votre ancien mot de passe est incorrect.");
+                return response;
+            }
+
+            utilisateur.setMotDePasse(passwordEncoder.encode( request.getNouveau()));
+            utilisateurService.modifier(utilisateur);
+
+            response.put("success", true);
+            response.put("message", "Information mis a jour avec success.");
+            return response;
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Enregistrement échoué. Une erreur est survenue");
+            return response;
+        }
+
     }
 
 

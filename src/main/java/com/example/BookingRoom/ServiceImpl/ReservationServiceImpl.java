@@ -1,10 +1,7 @@
 package com.example.BookingRoom.ServiceImpl;
 
 import com.example.BookingRoom.Entities.*;
-import com.example.BookingRoom.Repository.ChambreRepository;
-import com.example.BookingRoom.Repository.ReservationEnattenteRepository;
-import com.example.BookingRoom.Repository.ReservationRepository;
-import com.example.BookingRoom.Repository.UserRepository;
+import com.example.BookingRoom.Repository.*;
 import com.example.BookingRoom.Services.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,9 +23,9 @@ import java.util.stream.Collectors;
         private final FiliereService filiereservice;
         private final MessagerieService messagerieService;
         private final EtudiantService etudiantservice;
-        private final UserRepository userRepository;
+        private final UtilisateurRepository utilisateurRepository;
 
-        public ReservationServiceImpl(ReservationRepository reservationRepository, ReservationEnattenteRepository reservationEnattenteRepository, ChambreRepository chambreRepository, EcoleService ecoleService, FiliereService filiereservice, MessagerieService messagerieService, EtudiantService etudiantservice, UserRepository userRepository) {
+        public ReservationServiceImpl(ReservationRepository reservationRepository, ReservationEnattenteRepository reservationEnattenteRepository, ChambreRepository chambreRepository, EcoleService ecoleService, FiliereService filiereservice, MessagerieService messagerieService, EtudiantService etudiantservice, UtilisateurRepository utilisateurRepository) {
             this.reservationRepository = reservationRepository;
             this.reservationEnattenteRepository = reservationEnattenteRepository;
             this.chambreRepository = chambreRepository;
@@ -36,7 +33,7 @@ import java.util.stream.Collectors;
             this.messagerieService = messagerieService;
             this.etudiantservice = etudiantservice;
             this.filiereservice = filiereservice;
-            this.userRepository = userRepository;
+            this.utilisateurRepository = utilisateurRepository;
         }
 
         @Override
@@ -233,14 +230,14 @@ import java.util.stream.Collectors;
     public void checkannulationcreservation() {
         System.out.println("je mexecute chaque minuit");
         List<Reservation> reservationsEnAttente = this.getreservationbystatut(StatutReservation.EN_ATTENTE);
-        List<User> users = this.userRepository.findAll();
+        List<Utilisateur> users = this.utilisateurRepository.findAll();
         for (Reservation reservation : reservationsEnAttente) {
             LocalDateTime dateLimite = reservation.getDateFinReservation();
             LocalDateTime maintenant = LocalDateTime.now();
 
             // Si on est au-delà du seuil de rappel
             if (maintenant.isAfter(dateLimite))  {
-                for (User user : users) {
+                for (Utilisateur user : users) {
                     messagerieService.envoyermailechenceannulation(user, reservation); // À toi de définir cette méthode
                 }
             }

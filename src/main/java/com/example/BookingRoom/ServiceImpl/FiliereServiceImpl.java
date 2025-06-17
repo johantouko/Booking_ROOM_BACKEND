@@ -23,6 +23,8 @@ public class FiliereServiceImpl implements FiliereService {
 
     @Override
     public Filiere createFiliere(Filiere filiere) {
+        filiere.setNombreChambresFilledisponible(filiere.getNombreChambresFille());
+        filiere.setNombreChambresGarcondisponible(filiere.getNombreChambresGarcon());
         filiere.setNombreChambresDisponibles(filiere.getNombreChambres());
         return filiereRepository.save(filiere);
     }

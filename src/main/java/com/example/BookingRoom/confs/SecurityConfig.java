@@ -38,16 +38,23 @@ public class SecurityConfig {
                         .authorizeHttpRequests(
                                 authorize ->
                                         authorize
+//                                                .requestMatchers("/**").permitAll()
                                                 .requestMatchers("/connexion").permitAll()
                                                 .requestMatchers("/reservations/**").permitAll()
                                                 .requestMatchers("/sse/**").permitAll()
                                                 .requestMatchers("/creeruser").permitAll()
+                                                .requestMatchers("/ecoles/**").permitAll()
+                                                .requestMatchers("/filieres/**").permitAll()
+                                                .requestMatchers("/infosuser").permitAll()
+                                                .requestMatchers("/infosconnexion").permitAll()
+                                                .requestMatchers("/reservations/pdf").permitAll()
                                                 .requestMatchers(GET, "/verifiertoken").permitAll()
                                                 .requestMatchers(GET, "/ecoles").permitAll()
                                                 .requestMatchers(GET, "/filieres/ecole").permitAll()
                                                 .requestMatchers(GET, "/filieres/id").permitAll()
                                                 .requestMatchers(GET, "/etudiants/filiere").permitAll()
                                                 .requestMatchers(GET, "/chambres/sexe").permitAll()
+                                                .requestMatchers("/chambres/importall").permitAll()
 //                                                .requestMatchers("/**").hasAuthority("ADMIN")
                                                 .anyRequest().authenticated()
                         ).sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -32,11 +32,13 @@ public class BookingRoomApplication {
 			// Création de l'utilisateur Constantin
 			if (us.getUtilisateurByEmail("constantin.nitcheu@gmail.com") == null) {
 				us.creer(new Utilisateur(0, "constantin Nitcheu", "constantin.nitcheu@gmail.com", "Changeme@2025"));
+				us.creer(new Utilisateur(0, "johan Touko", "johan.touko@gmail.com", "Changeme@2025"));
 			}
 
 			// Vérifie si les utilisateurs ont déjà le rôle avant de l’ajouter
 			if (!us.aDejaLeRole("constantin.nitcheu@gmail.com", "Administrateur")) {
 				us.ajouterRole("constantin.nitcheu@gmail.com", "Administrateur");
+				us.ajouterRole("johan.touko@gmail.com", "Administrateur");
 			}
 
 		};

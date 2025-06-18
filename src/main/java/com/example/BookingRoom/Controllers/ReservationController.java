@@ -20,11 +20,14 @@ import org.springframework.web.bind.annotation.*;
 import com.lowagie.text.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import com.itextpdf.text.BaseColor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -530,16 +533,28 @@ public class ReservationController {
             PdfWriter.getInstance(document, baos);
             document.open();
 
-            BaseFont baseFont = BaseFont.createFont("src/main/resources/fonts/Montserrat-Regular.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-            Font fontTitre = new Font(baseFont, 18, Font.BOLD);
-            Font fontCell = new Font(baseFont, 12);
+            // Chargement de la police (Montserrat ou défaut)
+            Font fontTitre;
+            Font fontCell;
+            try {
+                BaseFont baseFont = BaseFont.createFont("fonts/Montserrat-Regular.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                fontTitre = new Font(baseFont, 18, Font.BOLD);
+                fontCell = new Font(baseFont, 12);
+            } catch (Exception e) {
+                fontTitre = new Font(Font.HELVETICA, 18, Font.BOLD);
+                fontCell = new Font(Font.HELVETICA, 12);
+            }
 
             // === PAGE DE GARDE ===
-            Image logo = Image.getInstance("src/main/resources/static/logo.png");
-            logo.scaleToFit(400, 400);
-            logo.setAlignment(Image.ALIGN_CENTER);
-            for (int i = 0; i < 8; i++) document.add(new Paragraph(" "));
-            document.add(logo);
+            try {
+                Image logo = Image.getInstance(getClass().getClassLoader().getResource("static/logo.png"));
+                logo.scaleToFit(400, 400);
+                logo.setAlignment(Image.ALIGN_CENTER);
+                for (int i = 0; i < 8; i++) document.add(new Paragraph(" "));
+                document.add(logo);
+            } catch (Exception e) {
+                // logo non trouvé, on ignore
+            }
 
             Paragraph titre = new Paragraph("Cité universitaire – Répartition des chambres 2025/2026", fontTitre);
             titre.setAlignment(Element.ALIGN_CENTER);
@@ -596,12 +611,12 @@ public class ReservationController {
                     Stream.of(cell1, cell2, cell3, cell4).forEach(cell -> {
                         cell.setHorizontalAlignment(Element.ALIGN_LEFT);
                         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-                        cell.setFixedHeight(55f); // hauteur augmentée pour 2 lignes + espace
+                        cell.setFixedHeight(55f);
                         cell.setPaddingLeft(8f);
                     });
 
                     if (ligne % 2 == 1) {
-                        Color gris = new Color(230, 230, 230);
+                        java.awt.Color gris = new java.awt.Color(230, 230, 230);
                         Stream.of(cell1, cell2, cell3, cell4).forEach(c -> c.setBackgroundColor(gris));
                     }
 

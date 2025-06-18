@@ -21,8 +21,8 @@ public class Etudiant {
     @Column(nullable = false, name="nom")
     private String nom;
 
-    private int whatsappEtudiant;
-    private int whatsappParent;
+    private Integer whatsappEtudiant;
+    private Integer whatsappParent;
 
     @Enumerated(EnumType.STRING)
     private TypeSexeChambre sexe;

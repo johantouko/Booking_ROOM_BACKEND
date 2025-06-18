@@ -33,20 +33,27 @@ public class MessagerieServiceImpl implements MessagerieService {
         <html>
         <body>
         Bonjour %s,<br><br>
+        
+                Nous accusons bonne réception de votre demande de réservation de chambre à l’Institut Universitaire Saint Jean.<br><br>
+        
+                👉 Votre demande est actuellement <strong>en attente de validation</strong>.<br>
+                👉 Le prospectus de paiement est joint à cet e-mail.<br>
 
-        Nous avons bien reçu votre demande de réservation de chambre à l’Institut Universitaire Saint Jean.<br><br>
-
-        👉 Votre demande est <strong>en attente de validation</strong>.<br>
-
-        ⚠ Vous disposez d’un <strong>délai de 48 heures</strong> à échéance <strong>%s</strong> pour :<br>
-        1. Effectuer le paiement du loyer et de la caution<br>
-        2. Et <strong>déposer le reçu de paiement</strong> à la comptabilité en plus du fichier de récapitulatif imprimé.<br><br>
-
-        Sans dépôt de reçu dans ce délai, votre demande sera automatiquement annulée.<br>
-
-        Merci pour votre réactivité.<br><br>
-        L’équipe Logement<br>
-        Institut Universitaire Saint Jean
+                ⚠ Vous disposez d’un <strong>délai de 48 heures</strong> à échéance <strong>%s</strong> pour :<br>
+        
+                1. Effectuer le paiement du loyer et de la caution,<br>
+        
+                2. Déposer à la comptabilité le reçu de paiement ainsi que le fichier récapitulatif imprimé.<br>
+        
+                Sans dépôt de ces documents dans le délai imparti, votre demande sera automatiquement annulée.<br><br>
+        
+                📩 Pour toute information complémentaire, veuillez écrire à cite@universitesaintjean.org.<br><br>
+        
+                Nous vous remercions pour votre réactivité.<br>
+        
+                L’équipe Logement<br>
+                Institut Universitaire Saint Jean<br>
+        
         <br><br><br>
         </body>
         </html>
